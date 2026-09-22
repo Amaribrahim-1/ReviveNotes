@@ -33,3 +33,7 @@ Register and login are limited to 5 attempts per 15 minutes per IP plus email. T
 `color` stores one of eight ids from `CATEGORY_COLORS`: `red`, `orange`, `amber`, `green`, `teal`, `blue`, `violet`, `pink`. The screen maps each id to a Tailwind class. A hex color typed by the user was rejected.
 
 A category or tag name is trimmed. `name_key` is that trimmed name in lowercase. Uniqueness is still `(user_id, name_key)`, so one user cannot save both `Work` and `work`, and two users can use the same name.
+
+## Capture
+
+Text content is 1 to 10,000 characters, and a link URL is at most 2,000 characters.
