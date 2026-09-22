@@ -15,6 +15,7 @@ type SignedInShellProps = {
 const links = [
   { href: "/inbox", label: "الوارد" },
   { href: "/categories", label: "التصنيفات والوسوم" },
+  { href: "/settings", label: "الإعدادات" },
 ];
 
 export function SignedInShell({ children }: SignedInShellProps) {

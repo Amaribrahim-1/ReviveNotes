@@ -2,6 +2,7 @@ import { createItemSchema, itemListQuerySchema } from "@revivenotes/shared";
 import type { Request, Response } from "express";
 import { prisma } from "./db.js";
 import { readSignedInUser } from "./require-user.js";
+import { getUserDayRange } from "./user-day.js";
 
 const PAGE_SIZE = 30;
 const NOT_FOUND = "مش موجود";
@@ -49,16 +50,21 @@ function readCursor(value: string): { createdAt: Date; id: string } | null {
   return { createdAt, id };
 }
 
-function toItem(row: {
-  id: string;
-  type: string;
-  content: string;
-  status: string;
-  category_id: string | null;
-  link_preview: unknown;
-  created_at: Date;
-  last_touched_at: Date;
-}) {
+function toItem(
+  row: {
+    id: string;
+    type: string;
+    content: string;
+    status: string;
+    category_id: string | null;
+    link_preview: unknown;
+    created_at: Date;
+    last_touched_at: Date;
+  },
+  user: { timezone: string; day_start_time: number },
+) {
+  // local_date is calculated from created_at when the row is read. The stored instant stays UTC.
+  const localDate = getUserDayRange(user.timezone, user.day_start_time, row.created_at).localDate;
   return {
     id: row.id,
     type: row.type,
@@ -68,6 +74,7 @@ function toItem(row: {
     link_preview: row.link_preview,
     created_at: row.created_at.toISOString(),
     last_touched_at: row.last_touched_at.toISOString(),
+    local_date: localDate,
   };
 }
 
@@ -93,7 +100,7 @@ export async function createItem(req: Request, res: Response) {
     select: itemSelect,
   });
 
-  res.status(201).json(toItem(item));
+  res.status(201).json(toItem(item, user));
 }
 
 export async function listItems(req: Request, res: Response) {
@@ -141,7 +148,7 @@ export async function listItems(req: Request, res: Response) {
   const nextCursor = rows.length > PAGE_SIZE && last ? encodeCursor(last.created_at, last.id) : null;
 
   res.json({
-    items: page.map(toItem),
+    items: page.map((row) => toItem(row, user)),
     next_cursor: nextCursor,
   });
 }
@@ -163,5 +170,5 @@ export async function getItem(req: Request, res: Response) {
     return;
   }
 
-  res.json(toItem(item));
+  res.json(toItem(item, user));
 }

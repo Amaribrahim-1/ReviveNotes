@@ -45,6 +45,7 @@ export type Item = {
   link_preview: null;
   created_at: string;
   last_touched_at: string;
+  local_date: string;
 };
 
 export type ItemPage = {

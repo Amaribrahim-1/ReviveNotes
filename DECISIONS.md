@@ -37,3 +37,9 @@ A category or tag name is trimmed. `name_key` is that trimmed name in lowercase.
 ## Capture
 
 Text content is 1 to 10,000 characters, and a link URL is at most 2,000 characters.
+
+## Day boundary
+
+`day_start_time = 14` and `Africa/Cairo` means the user's day runs from 14:00 until 14:00 the next calendar date, in Cairo. An instant at 13:00 local belongs to the previous calendar date. An instant at 14:00 local belongs to that calendar date.
+
+The database keeps the original UTC instant. The list computes `local_date` when it reads `created_at`, using the timezone and day-start hour saved at that moment. Storing a timestamp already shifted into local time was rejected: if the user later changes the zone or the start hour, the original instant would be gone.

@@ -53,11 +53,18 @@ export default function ItemList() {
         <p>تقدر تسجّل الملاحظة من غير تصنيف.</p>
       ) : (
         <ul className="flex list-none flex-col gap-3 p-0">
-          {rows.map((item) => (
-            <li key={item.id}>
-              <ItemCard item={item} />
-            </li>
-          ))}
+          {rows.map((item, index) => {
+            const previous = rows[index - 1];
+            const showDayLabel = previous === undefined || previous.local_date !== item.local_date;
+            return (
+              <li key={item.id} className="flex flex-col gap-2">
+                {showDayLabel ? (
+                  <h2 className="text-sm font-medium text-neutral-700">{dayLabel(item.local_date)}</h2>
+                ) : null}
+                <ItemCard item={item} />
+              </li>
+            );
+          })}
         </ul>
       )}
       {items.hasNextPage ? (
@@ -74,4 +81,22 @@ export default function ItemList() {
       ) : null}
     </div>
   );
+}
+
+function dayLabel(localDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(localDate);
+  if (!match) {
+    return localDate;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  // local_date is already the user's calendar day. timeZone UTC prints that same year, month, and day.
+  return new Intl.DateTimeFormat("ar", {
+    numberingSystem: "latn",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
 }
