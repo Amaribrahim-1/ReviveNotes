@@ -43,3 +43,13 @@ Text content is 1 to 10,000 characters, and a link URL is at most 2,000 characte
 `day_start_time = 14` and `Africa/Cairo` means the user's day runs from 14:00 until 14:00 the next calendar date, in Cairo. An instant at 13:00 local belongs to the previous calendar date. An instant at 14:00 local belongs to that calendar date.
 
 The database keeps the original UTC instant. The list computes `local_date` when it reads `created_at`, using the timezone and day-start hour saved at that moment. Storing a timestamp already shifted into local time was rejected: if the user later changes the zone or the start hour, the original instant would be gone.
+
+## Item lifecycle
+
+`PATCH /items/:id` accepts `content`, `status`, `category_id`, and `tag_ids`. `tag_ids` is the full set on that item. The screen sends every selected tag in one save. Adding a single tag through its own route was rejected, because the picker would then need a second request to learn what is already selected.
+
+`last_touched_at` moves only when content, status, category, or the tag set actually changes. Sending the same values does not move it. `created_at` stays. Opening the detail page still does not count as a touch.
+
+Entering `done` writes one `done` ClearEvent. A second save that is already `done` does not write another. Leaving `done` deletes that item's `done` events whose `created_at` falls in the current user-day from `getUserDayRange`. Older `done` events stay. Comparing UTC calendar dates was rejected, because Cairo midnight is not UTC midnight. Archive writes no event. Permanent delete writes a `deleted` event first, then deletes the item. Postgres sets that event's `item_id` to null, and the event stays.
+
+Editing a link URL clears `link_preview`, because the old preview described the old URL. Voice and image `content` is a private object key, so this patch refuses to replace it. A free-text rewrite of that key was rejected.

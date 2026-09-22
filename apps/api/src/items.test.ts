@@ -71,6 +71,8 @@ describe("text and link items", () => {
     ["get", "/items"],
     ["post", "/items"],
     ["get", "/items/missing"],
+    ["patch", "/items/missing"],
+    ["delete", "/items/missing"],
   ] as const)("%s %s without a session returns 401", async (method, path) => {
     const response = await request(app)[method](path);
     expect(response.status).toBe(401);

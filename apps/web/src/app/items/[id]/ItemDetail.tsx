@@ -1,15 +1,26 @@
 "use client";
 
-import type { Item } from "@revivenotes/shared";
-import { useQuery } from "@tanstack/react-query";
+import { updateItemSchema, type Item, type UpdateItemInput } from "@revivenotes/shared";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { api, apiError } from "@/lib/api";
+import ItemCategoryField from "./ItemCategoryField";
+import ItemContentForm from "./ItemContentForm";
+import ItemDeleteButton from "./ItemDeleteButton";
+import ItemStatusControls from "./ItemStatusControls";
+import ItemTagField from "./ItemTagField";
 
 type ItemDetailProps = {
   itemId: string;
 };
 
 export default function ItemDetail({ itemId }: ItemDetailProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const item = useQuery({
     queryKey: ["item", itemId],
     retry: false,
@@ -21,6 +32,53 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
       return response.json() as Promise<Item>;
     },
   });
+
+  async function save(patch: UpdateItemInput) {
+    setError(null);
+    const parsed = updateItemSchema.safeParse(patch);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      return;
+    }
+
+    setPending(true);
+    try {
+      const response = await api(`/items/${itemId}`, {
+        method: "PATCH",
+        body: JSON.stringify(parsed.data),
+      });
+      if (!response.ok) {
+        setError(await apiError(response));
+        return;
+      }
+      const updated = (await response.json()) as Item;
+      queryClient.setQueryData(["item", itemId], updated);
+      await queryClient.invalidateQueries({ queryKey: ["items"] });
+    } catch {
+      setError("مش قادرين نوصل للسيرفر");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function remove() {
+    setError(null);
+    setPending(true);
+    try {
+      const response = await api(`/items/${itemId}`, { method: "DELETE" });
+      if (response.status === 204) {
+        queryClient.removeQueries({ queryKey: ["item", itemId] });
+        await queryClient.invalidateQueries({ queryKey: ["items"] });
+        router.push("/inbox");
+        return;
+      }
+      setError(await apiError(response));
+    } catch {
+      setError("مش قادرين نوصل للسيرفر");
+    } finally {
+      setPending(false);
+    }
+  }
 
   if (item.isPending) {
     return <p>بنحمّل الملاحظة...</p>;
@@ -35,19 +93,57 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   }
 
   let body: ReactNode;
-  switch (item.data.type) {
-    case "text":
-      body = <p className="whitespace-pre-wrap break-words">{item.data.content}</p>;
-      break;
-    case "link":
-      body = linkBody(item.data.content);
-      break;
-    default:
-      body = <p>النوع ده لسه مش متاح.</p>;
-      break;
+  if (item.data.type === "text" || item.data.type === "link") {
+    body = (
+      <>
+        {item.data.type === "link" ? linkBody(item.data.content) : null}
+        <ItemContentForm
+          key={`${item.data.id}:${item.data.content}`}
+          item={item.data}
+          pending={pending}
+          onSave={(patch) => {
+            void save(patch);
+          }}
+          onInvalid={setError}
+        />
+      </>
+    );
+  } else {
+    body = <p>النوع ده لسه مش متاح.</p>;
   }
 
-  return <article className="rounded border border-amber-200 bg-amber-50 p-4">{body}</article>;
+  return (
+    <article className="flex flex-col gap-6 rounded border border-amber-200 bg-amber-50 p-4">
+      {body}
+      {error ? (
+        <p className="text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <ItemStatusControls
+        item={item.data}
+        pending={pending}
+        onSave={(patch) => {
+          void save(patch);
+        }}
+      />
+      <ItemCategoryField
+        item={item.data}
+        pending={pending}
+        onSave={(patch) => {
+          void save(patch);
+        }}
+      />
+      <ItemTagField
+        item={item.data}
+        pending={pending}
+        onSave={(patch) => {
+          void save(patch);
+        }}
+      />
+      <ItemDeleteButton pending={pending} onDelete={() => void remove()} />
+    </article>
+  );
 }
 
 function linkBody(content: string): ReactNode {

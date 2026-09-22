@@ -7,7 +7,7 @@ import {
   listCategories,
   updateCategory,
 } from "./category-routes.js";
-import { createItem, getItem, listItems } from "./item-routes.js";
+import { createItem, deleteItem, getItem, listItems, updateItem } from "./item-routes.js";
 import { requireUser } from "./require-user.js";
 import { createTag, deleteTag, listTags, updateTag } from "./tag-routes.js";
 
@@ -40,6 +40,8 @@ app.delete("/tags/:id", requireUser, deleteTag);
 app.get("/items", requireUser, listItems);
 app.post("/items", requireUser, createItem);
 app.get("/items/:id", requireUser, getItem);
+app.patch("/items/:id", requireUser, updateItem);
+app.delete("/items/:id", requireUser, deleteItem);
 
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error(error);
