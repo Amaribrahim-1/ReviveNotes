@@ -1,0 +1,11 @@
+{
+  "name": "revivenotes",
+  "private": true,
+  "packageManager": "pnpm@12.5.1",
+  "scripts": {
+    "test": "corepack pnpm --filter @revivenotes/shared build && corepack pnpm --filter @revivenotes/api test",
+    "dev:web": "corepack pnpm --filter @revivenotes/shared build && corepack pnpm --filter @revivenotes/web dev",
+    "dev:api": "corepack pnpm --filter @revivenotes/api build && corepack pnpm --filter @revivenotes/api start",
+    "db:migrate": "corepack pnpm --filter @revivenotes/api exec prisma migrate dev"
+  }
+}

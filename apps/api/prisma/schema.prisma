@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ItemType {
+  link
+  text
+  voice
+  image
+}
+
+enum ItemStatus {
+  inbox
+  active
+  done
+  archived
+}
+
+enum ClearKind {
+  done
+  deleted
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password_hash     String
+  timezone          String
+  day_start_time    Int      @default(0)
+  reminders_enabled Boolean  @default(false)
+  reminder_times    String[] @default([])
+
+  refresh_sessions    RefreshSession[]
+  categories          Category[]
+  tags                Tag[]
+  items               Item[]
+  clear_events        ClearEvent[]
+  push_subscriptions  PushSubscription[]
+  reminder_deliveries ReminderDelivery[]
+}
+
+model RefreshSession {
+  id          String    @id @default(cuid())
+  user_id     String
+  session_id  String
+  token_hash  String    @unique
+  expires_at  DateTime  @db.Timestamptz(3)
+  replaced_at DateTime? @db.Timestamptz(3)
+  revoked_at  DateTime? @db.Timestamptz(3)
+  created_at  DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([session_id])
+}
+
+model Category {
+  id       String @id @default(cuid())
+  user_id  String
+  name     String
+  name_key String
+  color    String
+
+  user  User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items Item[]
+
+  @@unique([user_id, name_key])
+}
+
+model Tag {
+  id       String @id @default(cuid())
+  user_id  String
+  name     String
+  name_key String
+
+  user      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  item_tags ItemTag[]
+
+  @@unique([user_id, name_key])
+}
+
+model Item {
+  id               String     @id @default(cuid())
+  user_id          String
+  type             ItemType
+  content          String
+  link_preview     Json?
+  category_id      String?
+  status           ItemStatus @default(inbox)
+  created_at       DateTime   @default(now()) @db.Timestamptz(3)
+  last_touched_at  DateTime   @default(now()) @db.Timestamptz(3)
+  duration_seconds Int?
+
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category     Category?    @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  item_tags    ItemTag[]
+  clear_events ClearEvent[]
+
+  @@index([user_id, created_at, id])
+  @@index([user_id, status, last_touched_at])
+  @@index([user_id, category_id])
+}
+
+model ItemTag {
+  item_id String
+  tag_id  String
+
+  item Item @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([item_id, tag_id])
+}
+
+model ClearEvent {
+  id         String    @id @default(cuid())
+  user_id    String
+  item_id    String?
+  kind       ClearKind
+  created_at DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  item Item? @relation(fields: [item_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id, created_at])
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  user_id    String
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model ReminderDelivery {
+  id         String   @id @default(cuid())
+  user_id    String
+  local_date DateTime @db.Date
+  slot       String
+  sent_at    DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, local_date, slot])
+}
