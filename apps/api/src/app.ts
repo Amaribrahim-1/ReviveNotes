@@ -1,6 +1,13 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { login, logout, me, refresh, register } from "./auth-routes.js";
+import {
+  createCategory,
+  deleteCategory,
+  listCategories,
+  updateCategory,
+} from "./category-routes.js";
 import { requireUser } from "./require-user.js";
+import { createTag, deleteTag, listTags, updateTag } from "./tag-routes.js";
 
 export const app = express();
 
@@ -16,6 +23,16 @@ app.post("/auth/login", login);
 app.post("/auth/refresh", refresh);
 app.post("/auth/logout", logout);
 app.get("/me", requireUser, me);
+
+app.get("/categories", requireUser, listCategories);
+app.post("/categories", requireUser, createCategory);
+app.patch("/categories/:id", requireUser, updateCategory);
+app.delete("/categories/:id", requireUser, deleteCategory);
+
+app.get("/tags", requireUser, listTags);
+app.post("/tags", requireUser, createTag);
+app.patch("/tags/:id", requireUser, updateTag);
+app.delete("/tags/:id", requireUser, deleteTag);
 
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error(error);

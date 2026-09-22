@@ -1,3 +1,4 @@
+import type { PublicUser } from "@revivenotes/shared";
 import type { NextFunction, Request, Response } from "express";
 import { LOGIN_REQUIRED } from "./auth-messages.js";
 import { prisma } from "./db.js";
@@ -45,4 +46,19 @@ export async function requireUser(req: Request, res: Response, next: NextFunctio
 
   res.locals.user = toPublicUser(user);
   next();
+}
+
+export function readSignedInUser(res: Response): PublicUser {
+  const user: unknown = res.locals.user;
+  if (!isPublicUser(user)) {
+    throw new Error("requireUser did not set a user");
+  }
+  return user;
+}
+
+function isPublicUser(value: unknown): value is PublicUser {
+  if (typeof value !== "object" || value === null || !("id" in value)) {
+    return false;
+  }
+  return typeof value.id === "string" && value.id.length > 0;
 }

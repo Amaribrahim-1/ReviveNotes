@@ -27,3 +27,9 @@ The browser holds two cookies, `access_token` and `refresh_token`. Both are `htt
 Login creates a new `session_id`, so each browser has its own session. Refresh rotation happens only in `POST /auth/refresh`. The new row keeps the same `session_id`, and the old row gets `replaced_at`. The access JWT carries that `session_id`. If a refresh token shows up again after it was replaced or revoked, every row with that `session_id` gets `revoked_at`, and `/me` rejects the access cookie from that browser too. Another browser, with its own `session_id`, stays logged in.
 
 Register and login are limited to 5 attempts per 15 minutes per IP plus email. The counter sits in memory in this process, so it resets when the process restarts. Redis was rejected because it would be a second always-on service.
+
+## Categories and tags
+
+`color` stores one of eight ids from `CATEGORY_COLORS`: `red`, `orange`, `amber`, `green`, `teal`, `blue`, `violet`, `pink`. The screen maps each id to a Tailwind class. A hex color typed by the user was rejected.
+
+A category or tag name is trimmed. `name_key` is that trimmed name in lowercase. Uniqueness is still `(user_id, name_key)`, so one user cannot save both `Work` and `work`, and two users can use the same name.
