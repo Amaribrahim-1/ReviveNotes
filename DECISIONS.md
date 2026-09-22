@@ -17,3 +17,13 @@ Timestamps are `timestamptz` in UTC. Prisma's default `DateTime` is `timestamp` 
 `RefreshSession` is a table in this first migration because the next task stores refresh tokens there. `ReminderDelivery` is a table now so one reminder slot is recorded once per user per local calendar date. `local_date` is a Postgres `date` (`@db.Date`), not a shifted timestamp.
 
 `duration_seconds` is on the item because the voice card shows a duration, and the server will not open the audio file to measure it.
+
+## Session
+
+The browser holds two cookies, `access_token` and `refresh_token`. Both are `httpOnly`, `Secure`, and `SameSite=None`, on path `/`. The access cookie is a JWT that lives 15 minutes. The refresh cookie is a random value that lives 30 days. The database stores only the SHA-256 hash of that random value. bcrypt is for the password. The refresh token is already random, so it is not hashed with bcrypt.
+
+`SameSite=None` is there because the web app and the API are different sites: different ports on your machine, and Vercel plus Render later. The `Secure` flag stays on localhost. Chromium treats `http://localhost` as a secure context, so the cookie still sticks.
+
+Login creates a new `session_id`, so each browser has its own session. Refresh rotation happens only in `POST /auth/refresh`. The new row keeps the same `session_id`, and the old row gets `replaced_at`. The access JWT carries that `session_id`. If a refresh token shows up again after it was replaced or revoked, every row with that `session_id` gets `revoked_at`, and `/me` rejects the access cookie from that browser too. Another browser, with its own `session_id`, stays logged in.
+
+Register and login are limited to 5 attempts per 15 minutes per IP plus email. The counter sits in memory in this process, so it resets when the process restarts. Redis was rejected because it would be a second always-on service.
