@@ -1,0 +1,16 @@
+---
+description: Timestamps, day boundary, touch rules, and clear events.
+globs: apps/api/**/*.ts,packages/shared/**/*.ts,**/*.prisma
+alwaysApply: false
+---
+
+# Data rules
+
+- Store timestamps as `timestamptz` in UTC. Never shift a stored timestamp to fake the user's day.
+- Compute "today" and "yesterday" at read time. A user's day runs from `day_start_time` in their IANA timezone until the same hour on the next date. If local time is earlier than that hour, the instant belongs to the previous date.
+- Set `last_touched_at` to `created_at` on insert. Update it only when the user edits content, changes status, changes category, adds or removes a tag, or presses Revive.
+- Opening a card, loading a list, playing audio, and rendering revival are not touches. Revival does not change `created_at` or `status`.
+- New items start as `inbox` with `category_id` null. Assigning a category does not change status.
+- Entering `done` writes a `done` ClearEvent. Leaving `done` removes that event if it falls in the current user-day. Permanent delete writes a `deleted` event that stays. Archive writes nothing.
+- Store email trimmed and lowercased. Names for categories and tags are unique per user, case-insensitive.
+- One image item holds one image (max 5 MB). One voice item holds one clip (10 minutes or 15 MB). Keep the recorded blob. Do not transcode.

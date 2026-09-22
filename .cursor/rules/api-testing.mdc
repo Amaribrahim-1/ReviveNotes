@@ -1,0 +1,18 @@
+---
+description: Cross-user access tests and a curl check in chat for each API step.
+globs: apps/api/**/*.ts
+alwaysApply: false
+---
+
+# API tests
+
+For every endpoint that reads or writes user data, add a Vitest + Supertest test:
+
+1. Register user A and user B.
+2. Create the resource as A.
+3. Read, update, and delete it as B.
+4. Assert rejection.
+
+Include file streaming and push-subscription routes.
+
+In the chat hand-off, include a short `curl` recipe so the same check can be run without reading the code. Do not save that recipe to a review file.

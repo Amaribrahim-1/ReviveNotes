@@ -1,0 +1,20 @@
+---
+description: Arabic RTL UI, state split, Tailwind, and naming in the web app.
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Web UI
+
+- UI copy is Arabic. Layout is RTL. Digits inside the UI are Western (`1 2 3`).
+- TanStack Query owns server state: items, categories, tags, session user.
+- Zustand owns UI state only: open modal, selected filters, recorder state. Do not store item lists in Zustand.
+- Cards, not tables. Capture has no title and does not require a category or tag.
+- Empty inbox: one short Arabic line. No onboarding tour.
+- Filters: category, status, and type are single-select combined with AND. Tags are multi-select combined with OR.
+- Tailwind classes only. No `style={{}}`.
+- One component per file. The file name matches the default export (`ItemCard.tsx` exports `ItemCard`).
+- A component used by one screen stays next to that screen. Move it to a shared folder only when a second screen uses it.
+- Hooks are `use` + camelCase, one hook per file.
+- The PWA is for install and Web Push only. No offline capture or reading.
+- iOS gaps for Web Share Target and Web Push are accepted. Do not block MVP on them.

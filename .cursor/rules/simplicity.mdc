@@ -1,0 +1,27 @@
+---
+description: Write the simplest code a fresher can read. Required security and stack libraries stay.
+alwaysApply: true
+---
+
+# Simplicity
+
+The reader is a frontend fresher learning backend. Every line must be explainable out loud.
+
+- Prefer the longer, obvious solution over a clever or compact one.
+- Solve this task only. No extra abstraction, generics, or "reusable later" layers.
+- Do not add a library outside `project-spec.md` without asking first and explaining it in plain terms.
+- Use the spec's libraries instead of hand-rolled versions: Zod, bcrypt, jsonwebtoken, Prisma, TanStack Query.
+
+```ts
+// BAD — a layer this task does not need
+class ItemRepository { async findOwned() {} }
+
+// GOOD — a direct function the reader can follow
+async function findItemForUser(userId: string, itemId: string) {}
+```
+
+Simple does not mean skipping correctness. These stay, and they are not over-engineering:
+- Ownership checks on every user resource
+- Zod schemas from `packages/shared`
+- bcrypt cost 12, and JWT via `jsonwebtoken`
+- Prisma as the only database access

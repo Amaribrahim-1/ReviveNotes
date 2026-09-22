@@ -1,0 +1,35 @@
+---
+description: Chat language, one task per chat, Context7, in-chat review, and commit only after the user confirms.
+alwaysApply: true
+---
+
+# Workflow
+
+## Language
+- Talk in Egyptian Arabic.
+- Wrap every English technical term inside an Arabic sentence in backticks.
+- Code, comments, and these rules stay in English.
+
+## One chat, one task
+- Do one task in this chat. Do not start the next task here.
+- Do not invent a task list. Do not create a `tasks-reviews/` folder.
+- When the task is done, stop and wait.
+
+## Docs before code
+- Before writing code that uses a library, check Context7 for the current version and follow those docs, not memory.
+
+## Hand-off, in this chat only
+Do not save a review file. In the chat:
+1. Give the exact steps to run and test this task, including the main path and the important edge case.
+2. Review in this order: clean code, simplicity, performance, security, accessibility, UX, testing, maintainability, scalability, git action.
+   - Git action means the git step still needed. It does not mean GitHub Actions.
+   - A clean category is exactly `تمام`.
+   - A finding names the file and explains why in fresher terms. Say if you already fixed it.
+   - Scalability: mention a near-term risk. Do not add structure for it in this task.
+3. End with 2–3 lines the user can repeat if asked what this task did.
+4. Do not commit.
+
+## Commit
+- Commit only after the user has run the app, tested the task, and explicitly said it is good.
+- Message format: `type(scope): description`.
+- Types: `feat`, `fix`, `refactor`, `style`, `docs`, `chore`, `test`.

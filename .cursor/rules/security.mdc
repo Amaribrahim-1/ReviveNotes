@@ -1,0 +1,29 @@
+---
+description: Ownership, cookies, CORS, SSRF, and private file access for the API.
+globs: apps/api/**/*.ts
+alwaysApply: false
+---
+
+# API security
+
+Every route that reads or writes user data must check that the caller owns the resource. Include file streaming and push subscriptions.
+
+- No public R2 URLs. Stream voice and image bytes from the API after the ownership check.
+- Access token: 15 minutes. Refresh token: 30 days, rotated on use. Store only a hash of the refresh token. Reuse of a rotated token revokes that session.
+- Both tokens are `httpOnly` `Secure` cookies with `SameSite=None`.
+- CORS allows only the web origin, with `credentials: true`. Never `*`.
+- Logout revokes the refresh token and clears both cookies.
+- Rate-limit register and login: about 5 attempts per 15 minutes per IP + email.
+- Password: at least 8 characters. No extra composition rules. Hash with bcrypt cost 12.
+- Link preview fetch: about 5s timeout, about 1 MB cap, few redirects. Refuse private, loopback, link-local, and cloud-metadata addresses, including after redirects.
+- The reminder dispatch route is not user-authenticated. It requires the `CRON_SECRET` header and returns a short body.
+
+```ts
+// BAD — trusting the id in the URL
+const item = await prisma.item.findUnique({ where: { id: itemId } });
+
+// GOOD — the row must belong to the caller
+const item = await prisma.item.findFirst({
+  where: { id: itemId, userId: req.user.id },
+});
+```

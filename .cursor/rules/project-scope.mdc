@@ -1,0 +1,29 @@
+---
+description: Locked stack, out-of-scope list, cut order, and decision log for ReviveNotes.
+alwaysApply: true
+---
+
+# Scope
+
+Follow `project-spec.md`. Do not re-litigate the stack.
+
+- Web: Next.js App Router, TypeScript, Tailwind, TanStack Query, React Hook Form, Zod, Zustand.
+- API: Node, Express, TypeScript, Prisma, Zod. JWT via `jsonwebtoken`. Passwords via `bcrypt`.
+- Data: PostgreSQL on Neon through Prisma. Files: Cloudflare R2. Web on Vercel. API on Render. Cron: cron-job.org.
+- Do not replace the API with Supabase, Firebase, or another BaaS, and do not move it to Vercel serverless.
+- Do not add a second always-on service.
+- The API stays client-agnostic so a future non-browser client can call it.
+
+## Do not break
+- Every user-data route checks that the caller owns the resource.
+- No public R2 URLs. The API streams voice and image bytes after the ownership check.
+- Zod schemas live in `packages/shared` and are shared by both apps.
+- Timestamps stay UTC. "Today" is computed at read time from `timezone` and `day_start_time`.
+
+## Out of scope
+Do not build: AI categorization, transcription, a native app, password reset, email verification, search, offline capture or reading, export, account deletion, sharing text or images into the PWA, copying preview images into R2, transcoding voice to MP3.
+
+If time slips, cut in this order only, and stop at the first cut that fits: Share Target, image capture, link-preview fetching (still save the URL), daily progress indicator. Do not cut auth, text/link/voice capture, categories, tags, day boundary, revival, or reminders.
+
+## Decisions
+Record each major choice in `DECISIONS.md`: what was chosen, what was rejected, and why, in terms the user can explain later.

@@ -1,0 +1,20 @@
+---
+description: Zod schemas live in packages/shared and are the only input contracts.
+globs: packages/shared/**/*.ts,apps/api/**/*.ts,apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Shared contracts
+
+- Validate every input with Zod.
+- Schemas and shared types live in `packages/shared`. Both apps import them.
+- Do not copy a schema into `apps/web` or `apps/api`.
+- Category colors come from the fixed palette exported by `packages/shared`, not a free-form hex value.
+
+```ts
+// BAD — a second copy inside the API
+const createItemSchema = z.object({ type: z.enum(["link", "text"]) });
+
+// GOOD — one schema, imported
+import { createItemSchema } from "@revivenotes/shared";
+```
