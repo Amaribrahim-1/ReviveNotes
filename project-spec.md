@@ -48,7 +48,7 @@ The custom backend stays. Do not replace it with Supabase, Firebase, or any othe
 **Infrastructure (all free tier):**
 
 - Frontend hosting: Vercel.
-- Backend hosting: Zeabur free plan (one Node web service). It sleeps when idle and wakes on the next request. Render free was the original host, but creating a free service there now requires a payment card for verification, which blocked this project. Railway is not the host: its free plan is a small monthly usage credit, not a dependable always-free service.
+- Backend hosting: Back4App Containers free tier (one Dockerized Express service from GitHub). No credit card. Render free was the original host, but creating a free service there now requires a payment card for verification. Zeabur was tried next, but shared free clusters are deprecated and a paid server is required. Railway is not the host: its free plan is a small monthly usage credit, not a dependable always-free service.
 - Database: Neon.
 - Reminder wake-ups: [cron-job.org](https://cron-job.org/en/) (free HTTP cron). It closes the connection after 30 seconds and reads at most 64 KB of the response.
 

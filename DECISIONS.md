@@ -6,7 +6,7 @@ ReviveNotes keeps a separate Express API in this repo. Postgres is reached only 
 
 Supabase, Firebase, and deploying the API as Vercel serverless were rejected. The API stays one Node service so a future non-browser client can call the same routes.
 
-Hosting for that API was meant to be Render's free web service. Render now requires a payment card before creating even a free service, and the available cards either had no funds for the verification hold or were debit cards Render rejected. Paying a middleman to top up a credit card was rejected. Zeabur's free plan was chosen instead: still one long-running Express process, no card required, and the service sleeps when idle (same shape as Render free, so cron-job.org keep-awake still fits). Railway stayed rejected: its free allowance is a small usage credit, not a dependable always-free service.
+Hosting for that API was meant to be Render's free web service. Render now requires a payment card before creating even a free service, and the available cards either had no funds for the verification hold or were debit cards Render rejected. Paying a middleman to top up a credit card was rejected. Zeabur was tried next for a no-card free Node host, but Zeabur deprecated shared free clusters and now requires renting a paid server. Back4App Containers free tier was chosen instead: still one long-running Express process in Docker, no card required, deployed from GitHub. Railway stayed rejected: its free allowance is a small usage credit, not a dependable always-free service.
 
 `dotenv` is installed in the API because Prisma 7 reads `DATABASE_URL` from `prisma.config.ts`, and Node does not load a `.env` file by itself. `tsx` was not added. The API is compiled with `tsc` and started with `node`.
 
@@ -26,7 +26,7 @@ Timestamps are `timestamptz` in UTC. Prisma's default `DateTime` is `timestamp` 
 
 The browser holds two cookies, `access_token` and `refresh_token`. Both are `httpOnly`, `Secure`, and `SameSite=None`, on path `/`. The access cookie is a JWT that lives 15 minutes. The refresh cookie is a random value that lives 30 days. The database stores only the SHA-256 hash of that random value. bcrypt is for the password. The refresh token is already random, so it is not hashed with bcrypt.
 
-`SameSite=None` is there because the web app and the API are different sites: different ports on your machine, and Vercel plus Zeabur later. The `Secure` flag stays on localhost. Chromium treats `http://localhost` as a secure context, so the cookie still sticks.
+`SameSite=None` is there because the web app and the API are different sites: different ports on your machine, and Vercel plus Back4App later. The `Secure` flag stays on localhost. Chromium treats `http://localhost` as a secure context, so the cookie still sticks.
 
 Login creates a new `session_id`, so each browser has its own session. Refresh rotation happens only in `POST /auth/refresh`. The new row keeps the same `session_id`, and the old row gets `replaced_at`. The access JWT carries that `session_id`. If a refresh token shows up again after it was replaced or revoked, every row with that `session_id` gets `revoked_at`, and `/me` rejects the access cookie from that browser too. Another browser, with its own `session_id`, stays logged in.
 
