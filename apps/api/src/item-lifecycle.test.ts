@@ -345,7 +345,7 @@ describe("item lifecycle", () => {
     expect(editedBody.created_at).toBe(item.created_at);
   });
 
-  it("clears a link preview only when the URL changes", async () => {
+  it("keeps a link preview until the URL changes", async () => {
     const created = await request(app).post("/items").set("Cookie", cookiesA).send({
       type: "link",
       content: "https://example.com/old",
@@ -374,7 +374,7 @@ describe("item lifecycle", () => {
     expect(changed.status).toBe(200);
     const changedBody = changed.body as ItemBody;
     expect(changedBody.content).toBe("https://example.com/new");
-    expect(changedBody.link_preview).toBeNull();
+    expect(changedBody.link_preview).not.toEqual(preview);
     expect(changedBody.last_touched_at).not.toBe(touchedAt.toISOString());
   });
 

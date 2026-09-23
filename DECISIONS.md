@@ -52,7 +52,7 @@ The database keeps the original UTC instant. The list computes `local_date` when
 
 Entering `done` writes one `done` ClearEvent. A second save that is already `done` does not write another. Leaving `done` deletes that item's `done` events whose `created_at` falls in the current user-day from `getUserDayRange`. Older `done` events stay. Comparing UTC calendar dates was rejected, because Cairo midnight is not UTC midnight. Archive writes no event. Permanent delete writes a `deleted` event first, then deletes the item. Postgres sets that event's `item_id` to null, and the event stays.
 
-Editing a link URL clears `link_preview`, because the old preview described the old URL. Voice and image `content` is a private object key, so this patch refuses to replace it. A free-text rewrite of that key was rejected.
+Editing a link URL drops the old `link_preview`, because it described the old URL, then stores a new one when the fetch in the link-preview section succeeds. Voice and image `content` is a private object key, so this patch refuses to replace it. A free-text rewrite of that key was rejected.
 
 ## All-items filters
 
@@ -89,3 +89,13 @@ Brave ships the Push API but leaves Google's push service off. `subscribe` then 
 A voice clip is stored in Cloudflare R2. The item row keeps the private object key in `content`, shaped like `{user_id}/{item_id}.webm` or `.ogg`. `GET /items/:id/file` loads the row with `id` and `user_id`, then the API streams the bytes. The JSON body and the audio element never get an R2 host.
 
 A public bucket URL was rejected, because anyone with that link could play the clip. Bytes in Postgres were rejected, because the database holds rows, not audio files. Render's disk was rejected, because that disk is wiped when the free service sleeps or restarts. The bucket stays private.
+
+## Link preview
+
+Creating a link, or changing its URL, asks the API to fetch that page with `fetch`. Open Graph `og:site_name`, `og:title`, `og:description`, and `og:image` are stored in `link_preview`. `content` stays the URL the user typed. If the fetch fails, times out, or the address is refused, the item is still saved and `link_preview` is null.
+
+The thumbnail on the card is the remote `image_url`. Copying that file into R2 was rejected. A preview image is not a file the user uploaded, and `GET /items/:id/file` stays for voice and image items only. `next/image` was rejected for the same reason: the image optimizer would download the file on the server.
+
+The fetch allows only `http` and `https`. It waits at most 5 seconds, reads at most 1 MB, and follows at most 3 redirects. Each hop is checked again. `dns.promises.lookup` resolves the hostname with `{ all: true, order: "verbatim" }`. The URL is refused when any address is loopback (`127.0.0.0/8`, `::1`), private (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local (`169.254.0.0/16`, `fe80::/10`), unique-local (`fc00::/7`), or unspecified (`0.0.0.0/8`). The same check covers IPv4 embedded in IPv6 (`::ffff:`, 6to4, NAT64). Host names `localhost` (and `*.localhost`), `metadata`, `metadata.google.internal`, `metadata.google.com`, `instance-data`, and `instance-data.ec2.internal` are refused before that lookup. Checking the hostname text alone was rejected, because a public name can point at a private address.
+
+A scraping package was rejected. The four meta tags are read from the HTML `fetch` already downloaded. The check runs before the connection, so a name that changes its address in that gap is not pinned to the first answer.

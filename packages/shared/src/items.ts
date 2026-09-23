@@ -106,6 +106,16 @@ export type CreateItemInput = z.infer<typeof createItemSchema>;
 export type ItemListQuery = z.infer<typeof itemListQuerySchema>;
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
+// Written by the API after a link fetch. The client does not send this object.
+export const linkPreviewSchema = z.object({
+  site_name: z.string().nullable(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  image_url: z.string().nullable(),
+});
+
+export type LinkPreview = z.infer<typeof linkPreviewSchema>;
+
 export type Item = {
   id: string;
   type: ItemType;
@@ -113,7 +123,7 @@ export type Item = {
   status: ItemStatus;
   category_id: string | null;
   tag_ids: string[];
-  link_preview: null;
+  link_preview: LinkPreview | null;
   created_at: string;
   last_touched_at: string;
   local_date: string;

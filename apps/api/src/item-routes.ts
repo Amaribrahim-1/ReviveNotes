@@ -3,8 +3,10 @@ import {
   createItemSchema,
   itemListQuerySchema,
   linkContentSchema,
+  linkPreviewSchema,
   textContentSchema,
   updateItemSchema,
+  type LinkPreview,
   VOICE_MAX_BYTES,
   voiceDurationSchema,
 } from "@revivenotes/shared";
@@ -12,6 +14,7 @@ import type { Request, Response } from "express";
 import multer from "multer";
 import { prisma } from "./db.js";
 import { Prisma } from "./generated/prisma/client.js";
+import { fetchLinkPreview } from "./link-preview.js";
 import { openPrivateObject, putPrivateObject } from "./object-store.js";
 import { readSignedInUser } from "./require-user.js";
 import { getUserDayRange } from "./user-day.js";
@@ -120,6 +123,18 @@ function uniqueIds(ids: string[]): string[] {
   return unique;
 }
 
+function readStoredPreview(value: unknown): LinkPreview | null {
+  const parsed = linkPreviewSchema.safeParse(value);
+  if (!parsed.success) {
+    return null;
+  }
+  const preview = parsed.data;
+  if (!preview.site_name && !preview.title && !preview.description && !preview.image_url) {
+    return null;
+  }
+  return preview;
+}
+
 function toItem(row: StoredItem, user: { timezone: string; day_start_time: number }) {
   // local_date is calculated from created_at when the row is read. The stored instant stays UTC.
   const localDate = getUserDayRange(user.timezone, user.day_start_time, row.created_at).localDate;
@@ -130,7 +145,7 @@ function toItem(row: StoredItem, user: { timezone: string; day_start_time: numbe
     status: row.status,
     category_id: row.category_id,
     tag_ids: tagIdsOf(row.item_tags),
-    link_preview: row.link_preview,
+    link_preview: readStoredPreview(row.link_preview),
     created_at: row.created_at.toISOString(),
     last_touched_at: row.last_touched_at.toISOString(),
     local_date: localDate,
@@ -146,6 +161,8 @@ export async function createItem(req: Request, res: Response) {
   }
 
   const user = readSignedInUser(res);
+  // A refused or failed preview still saves the link. content stays the URL.
+  const linkPreview = parsed.data.type === "link" ? await fetchLinkPreview(parsed.data.content) : null;
   // One clock read so last_touched_at matches created_at. Reads do not move it later.
   const now = new Date();
   const item = await prisma.item.create({
@@ -154,6 +171,7 @@ export async function createItem(req: Request, res: Response) {
       type: parsed.data.type,
       content: parsed.data.content,
       status: "inbox",
+      link_preview: linkPreview === null ? Prisma.DbNull : linkPreview,
       created_at: now,
       last_touched_at: now,
     },
@@ -361,6 +379,12 @@ export async function updateItem(req: Request, res: Response) {
     return;
   }
 
+  // Fetch before the transaction so a slow page does not hold the database open.
+  let nextPreview: LinkPreview | null = null;
+  if (contentChanged && item.type === "link") {
+    nextPreview = await fetchLinkPreview(nextContent);
+  }
+
   const now = new Date();
   // The window is this user's day. start is included. end is the next day-start, so it is not.
   const day = getUserDayRange(user.timezone, user.day_start_time, now);
@@ -385,7 +409,7 @@ export async function updateItem(req: Request, res: Response) {
       content?: string;
       status?: StoredItem["status"];
       category_id?: string | null;
-      link_preview?: typeof Prisma.DbNull;
+      link_preview?: LinkPreview | typeof Prisma.DbNull;
       last_touched_at: Date;
     } = {
       last_touched_at: now,
@@ -393,7 +417,7 @@ export async function updateItem(req: Request, res: Response) {
     if (contentChanged) {
       data.content = nextContent;
       if (item.type === "link") {
-        data.link_preview = Prisma.DbNull;
+        data.link_preview = nextPreview ?? Prisma.DbNull;
       }
     }
     if (statusChanged) {

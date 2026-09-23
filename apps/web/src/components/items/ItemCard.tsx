@@ -1,6 +1,7 @@
 import type { Item } from "@revivenotes/shared";
 import Link from "next/link";
 import { formatVoiceDuration } from "./format-voice-duration";
+import LinkPreviewCard from "./LinkPreviewCard";
 import VoicePlayButton from "./VoicePlayButton";
 
 type ItemCardProps = {
@@ -24,14 +25,22 @@ export default function ItemCard({ item }: ItemCardProps) {
     );
   }
 
+  const preview = item.type === "link" ? item.link_preview : null;
+  const previewText = preview?.title ?? preview?.site_name ?? preview?.description ?? null;
+
   return (
     <Link
       href={`/items/${item.id}`}
+      aria-label={preview && !previewText ? item.content : undefined}
       className="block rounded border border-amber-200 bg-amber-50 p-4 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
     >
-      <p className={item.type === "link" ? "break-all" : "break-words"} dir={item.type === "link" ? "ltr" : undefined}>
-        {cardText(item)}
-      </p>
+      {preview ? (
+        <LinkPreviewCard preview={preview} />
+      ) : (
+        <p className={item.type === "link" ? "break-all" : "break-words"} dir={item.type === "link" ? "ltr" : undefined}>
+          {cardText(item)}
+        </p>
+      )}
     </Link>
   );
 }

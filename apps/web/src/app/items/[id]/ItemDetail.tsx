@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
+import LinkPreviewCard from "@/components/items/LinkPreviewCard";
 import VoicePlayButton from "@/components/items/VoicePlayButton";
 import { api, apiError } from "@/lib/api";
 import ItemCategoryField from "./ItemCategoryField";
@@ -102,6 +103,11 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   if (item.data.type === "text" || item.data.type === "link") {
     body = (
       <>
+        {item.data.type === "link" && item.data.link_preview ? (
+          <div className="-mx-4 -mt-4 overflow-hidden">
+            <LinkPreviewCard preview={item.data.link_preview} large />
+          </div>
+        ) : null}
         {item.data.type === "link" ? linkBody(item.data.content) : null}
         <ItemContentForm
           key={`${item.data.id}:${item.data.content}`}
