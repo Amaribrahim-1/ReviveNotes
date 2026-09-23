@@ -1,4 +1,5 @@
 // Push and notification clicks only. This worker does not cache pages, API calls, or media.
+// /share and the item create request stay on the network.
 
 self.addEventListener("push", (event) => {
   const payload = readPayload(event);

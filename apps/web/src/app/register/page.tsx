@@ -2,9 +2,10 @@
 
 import { registerSchema } from "@revivenotes/shared";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { api, apiError } from "@/lib/api";
+import { createRememberedShare, hasRememberedShare } from "@/lib/pending-share";
 
 type RegisterFields = {
   email: string;
@@ -16,6 +17,11 @@ export default function RegisterPage() {
     defaultValues: { email: "", password: "" },
   });
   const [error, setError] = useState<string | null>(null);
+  const [holdingShare, setHoldingShare] = useState(false);
+
+  useEffect(() => {
+    setHoldingShare(hasRememberedShare());
+  }, []);
 
   async function onSubmit(values: RegisterFields) {
     setError(null);
@@ -43,12 +49,19 @@ export default function RegisterPage() {
       return;
     }
 
+    const share = await createRememberedShare();
+    if (share === "error") {
+      setError("التسجيل تم، والرابط لسه محفوظ. اضغط تسجيل تاني عشان نسجله.");
+      return;
+    }
+
     window.location.assign("/inbox");
   }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-6 py-10">
       <h1 className="text-3xl font-semibold">حساب جديد</h1>
+      {holdingShare ? <p role="status">فيه رابط مستني. هيتحفظ في الوارد بعد التسجيل.</p> : null}
       <form className="flex flex-col gap-4" method="post" noValidate onSubmit={form.handleSubmit(onSubmit)}>
         <div>
           <label className="mb-1 block text-sm font-medium" htmlFor="register-email">

@@ -80,7 +80,7 @@ cron-job.org closes the connection after about 30 seconds. A cold start can die 
 
 The slot is the calendar date in `timezone` plus `HH:MM`. `day_start_time` is not added to it. The API uses the `web-push` package to send VAPID Web Push. Hand-rolling that encryption was rejected. The browser asks the API for the public key, so the private key stays in the API env.
 
-The service worker handles `push` and `notificationclick` only. It does not cache pages, API calls, or media. The manifest has no share target yet.
+The service worker handles `push` and `notificationclick` only. It does not cache pages, API calls, or media. Share target is a separate choice, written below.
 
 Brave ships the Push API but leaves Google's push service off. `subscribe` then fails even after the site permission is allowed. Chrome leaves that service on, so the same button works there. The settings page detects Brave and tells the user to turn on "Use Google services for push messaging" in `brave://settings/privacy`, then restart the browser. A second push vendor was rejected.
 
@@ -107,3 +107,11 @@ The thumbnail on the card is the remote `image_url`. Copying that file into R2 w
 The fetch allows only `http` and `https`. It waits at most 5 seconds, reads at most 1 MB, and follows at most 3 redirects. Each hop is checked again. `dns.promises.lookup` resolves the hostname with `{ all: true, order: "verbatim" }`. The URL is refused when any address is loopback (`127.0.0.0/8`, `::1`), private (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local (`169.254.0.0/16`, `fe80::/10`), unique-local (`fc00::/7`), or unspecified (`0.0.0.0/8`). The same check covers IPv4 embedded in IPv6 (`::ffff:`, 6to4, NAT64). Host names `localhost` (and `*.localhost`), `metadata`, `metadata.google.internal`, `metadata.google.com`, `instance-data`, and `instance-data.ec2.internal` are refused before that lookup. Checking the hostname text alone was rejected, because a public name can point at a private address.
 
 A scraping package was rejected. The four meta tags are read from the HTML `fetch` already downloaded. The check runs before the connection, so a name that changes its address in that gap is not pinned to the first answer.
+
+## Share target
+
+The installed app accepts a shared link only. The manifest `share_target` is `GET /share`, and the query name is `url`. Plain text and files are not listed, so the Android sheet is for links. If a text or image share still opens `/share` without `url`, nothing is created. The service worker stays push-only and does not cache `/share` or `POST /items`.
+
+A logged-out share writes the URL into `sessionStorage` before the login redirect. Login and register then call the same `POST /items` body as manual capture, `{ type: "link", content: url }`. That path already fills `link_preview`. A second preview fetch was rejected. The stored URL is removed only after that create succeeds, so a later login does not make a second item.
+
+`localStorage` was rejected. A leftover URL there would create another inbox link on a later login, even in a new tab. `sessionStorage` stays with the tab that received the share, which is the same tab as the login screen. iOS share-sheet gaps stay accepted.

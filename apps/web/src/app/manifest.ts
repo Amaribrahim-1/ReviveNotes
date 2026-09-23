@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-// Share target is a later task. This manifest only makes the app installable.
+// Links only. Text and files are not listed, so the share sheet does not offer them.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "ReviveNotes",
@@ -9,6 +9,14 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#171717",
+    share_target: {
+      action: "/share",
+      method: "GET",
+      enctype: "application/x-www-form-urlencoded",
+      params: {
+        url: "url",
+      },
+    },
     icons: [
       {
         src: "/icon-192.png",
