@@ -19,15 +19,16 @@ alwaysApply: true
 - Before writing code that uses a library, check Context7 for the current version and follow those docs, not memory.
 
 ## Hand-off, in this chat only
-Do not save a review file. In the chat:
-1. Give the exact steps to run and test this task, including the main path and the important edge case.
-2. Review in this order: clean code, simplicity, performance, security, accessibility, UX, testing, maintainability, scalability, git action.
+Do not save a review file. This applies when a task is finished, not when the user asked only for a review. In the chat:
+1. Explain the task in short Egyptian Arabic before any test steps. Say what the user can do now, in plain words, so they do not need to open `tasks.md`.
+2. Then give the exact steps to run and test this task, including the main path and the important edge case. The steps come only after that explanation.
+3. Review in this order: clean code, simplicity, performance, security, accessibility, UX, testing, maintainability, scalability, git action.
    - Git action means the git step still needed. It does not mean GitHub Actions.
    - A clean category is exactly `تمام`.
    - A finding names the file and explains why in fresher terms. Say if you already fixed it.
    - Scalability: mention a near-term risk. Do not add structure for it in this task.
-3. End with 2–3 lines the user can repeat if asked what this task did.
-4. Do not commit.
+4. End with 2–3 lines the user can repeat if asked what this task did.
+5. Do not commit.
 
 ## Commit
 - Commit only after the user has run the app, tested the task, and explicitly said it is good.
