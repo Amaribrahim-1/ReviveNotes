@@ -2,16 +2,13 @@ import { updateSettingsSchema, type UpdateSettingsInput } from "@revivenotes/sha
 import type { Request, Response } from "express";
 import { prisma } from "./db.js";
 import { publicUserSelect, toPublicUser } from "./public-user.js";
+import { issueMessage } from "./request-locale.js";
 import { readSignedInUser } from "./require-user.js";
-
-function firstIssueMessage(issues: { message: string }[]): string {
-  return issues[0]?.message ?? "البيانات مش مظبوطة";
-}
 
 export async function updateSettings(req: Request, res: Response) {
   const parsed = updateSettingsSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 

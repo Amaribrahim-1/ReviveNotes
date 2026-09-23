@@ -23,12 +23,14 @@ import ItemDeleteButton from "./ItemDeleteButton";
 import ItemNoteForm from "./ItemNoteForm";
 import ItemStatusControls from "./ItemStatusControls";
 import ItemTagField from "./ItemTagField";
+import { translateIssue, useT } from "@/lib/use-t";
 
 type ItemDetailProps = {
   itemId: string;
 };
 
 export default function ItemDetail({ itemId }: ItemDetailProps) {
+  const { t, locale } = useT();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
@@ -49,14 +51,14 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     setError(null);
     const parsed = updateItemSchema.safeParse(patch);
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setError(message);
       toast.error(message);
       return;
     }
 
     setPending(true);
-    const toastId = toast.loading("بنحفظ...");
+    const toastId = toast.loading(t("saving"));
     try {
       const response = await api(`/items/${itemId}`, {
         method: "PATCH",
@@ -74,10 +76,10 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
       if (parsed.data.status !== undefined) {
         await queryClient.invalidateQueries({ queryKey: ["progress"] });
       }
-      toast.success("اتحفظت", { id: toastId });
+      toast.success(t("saved"), { id: toastId });
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
     } finally {
       setPending(false);
     }
@@ -86,14 +88,14 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   async function remove() {
     setError(null);
     setPending(true);
-    const toastId = toast.loading("بنحذف...");
+    const toastId = toast.loading(t("deleting"));
     try {
       const response = await api(`/items/${itemId}`, { method: "DELETE" });
       if (response.status === 204) {
         queryClient.removeQueries({ queryKey: ["item", itemId] });
         await queryClient.invalidateQueries({ queryKey: ["items"] });
         await queryClient.invalidateQueries({ queryKey: ["progress"] });
-        toast.success("اتحذفت", { id: toastId });
+        toast.success(t("deleted"), { id: toastId });
         router.push("/inbox");
         return;
       }
@@ -101,21 +103,21 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
       setError(message);
       toast.error(message, { id: toastId });
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
     } finally {
       setPending(false);
     }
   }
 
   if (item.isPending) {
-    return <p className={mutedClass}>بنحمّل الملاحظة...</p>;
+    return <p className={mutedClass}>{t("loading_items")}</p>;
   }
 
   if (item.isError || !item.data) {
     return (
       <p className={alertClass} role="alert">
-        {item.error instanceof Error ? item.error.message : "حصل خطأ. حاول تاني."}
+        {item.error instanceof Error ? item.error.message : t("generic_error")}
       </p>
     );
   }
@@ -158,7 +160,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
       </div>
     );
   } else {
-    body = <p>النوع ده لسه مش متاح.</p>;
+    body = <p>{t("type_unknown")}</p>;
   }
 
   const showNote = item.data.type === "link" || item.data.type === "image" || item.data.type === "voice";

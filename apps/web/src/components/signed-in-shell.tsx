@@ -6,20 +6,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import HeaderToggles from "@/components/HeaderToggles";
 import RevivalScreen from "@/components/RevivalScreen";
-import ThemeToggle from "@/components/ThemeToggle";
 import { api } from "@/lib/api";
 import { buttonSecondaryClass, mutedClass, pageClass } from "@/lib/ui-classes";
+import { useT } from "@/lib/use-t";
+import type { UiKey } from "@/lib/ui-copy";
 
 type SignedInShellProps = {
   children: ReactNode;
 };
 
-const links = [
-  { href: "/inbox", label: "الوارد" },
-  { href: "/items", label: "الكل" },
-  { href: "/categories", label: "تصنيفات" },
-  { href: "/settings", label: "إعدادات" },
+const linkKeys: { href: string; label: UiKey }[] = [
+  { href: "/inbox", label: "nav_inbox" },
+  { href: "/items", label: "nav_all" },
+  { href: "/categories", label: "nav_categories" },
+  { href: "/settings", label: "nav_settings" },
 ];
 
 function isNoSession(error: unknown): boolean {
@@ -28,6 +30,7 @@ function isNoSession(error: unknown): boolean {
 
 export function SignedInShell({ children }: SignedInShellProps) {
   const pathname = usePathname();
+  const { t } = useT();
   const [leaving, setLeaving] = useState(false);
   const me = useQuery({
     queryKey: ["me"],
@@ -117,7 +120,7 @@ export function SignedInShell({ children }: SignedInShellProps) {
   if (me.isPending) {
     return (
       <main className={pageClass}>
-        <p className={mutedClass}>بنأكد الجلسة...</p>
+        <p className={mutedClass}>{t("confirming_session")}</p>
       </main>
     );
   }
@@ -125,7 +128,7 @@ export function SignedInShell({ children }: SignedInShellProps) {
   if (isNoSession(revival.error)) {
     return (
       <main className={pageClass}>
-        <p className={mutedClass}>بنحوّلك على صفحة الدخول...</p>
+        <p className={mutedClass}>{t("redirecting_login")}</p>
       </main>
     );
   }
@@ -134,16 +137,16 @@ export function SignedInShell({ children }: SignedInShellProps) {
     if (isNoSession(me.error)) {
       return (
         <main className={pageClass}>
-          <p className={mutedClass}>بنحوّلك على صفحة الدخول...</p>
+          <p className={mutedClass}>{t("redirecting_login")}</p>
         </main>
       );
     }
 
     return (
       <main className={pageClass}>
-        <p>مش قادرين نوصل للسيرفر</p>
+        <p>{t("offline")}</p>
         <button type="button" onClick={() => void me.refetch()} className={buttonSecondaryClass}>
-          حاول تاني
+          {t("try_again")}
         </button>
       </main>
     );
@@ -159,39 +162,38 @@ export function SignedInShell({ children }: SignedInShellProps) {
       <header className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-lg font-semibold tracking-tight text-rn-ink">ريفايف نوتس</p>
+            <p className="text-lg font-semibold tracking-tight text-rn-ink">{t("app_name")}</p>
             <p className={`truncate text-sm ${mutedClass}`}>{me.data.email}</p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
+          <HeaderToggles>
             <button
               type="button"
               onClick={onLogout}
               disabled={leaving}
               className={buttonSecondaryClass}
             >
-              خروج
+              {t("logout")}
             </button>
-          </div>
+          </HeaderToggles>
         </div>
         {progress.isSuccess ? (
           <p className={`rounded-xl border border-rn-border bg-rn-surface/70 px-3 py-2 text-sm ${mutedClass}`}>
-            خلّصت النهارده{" "}
+            {t("progress_cleared")}{" "}
             <span dir="ltr" className="font-semibold text-rn-accent">
               {progress.data.cleared}
             </span>
           </p>
         ) : null}
         {progress.isError && !isNoSession(progress.error) ? (
-          <p className={mutedClass}>مش قادرين نجيب العدّاد</p>
+          <p className={mutedClass}>{t("progress_error")}</p>
         ) : null}
         {hideNav ? null : (
           <nav
             className="fixed inset-x-0 bottom-0 z-20 border-t border-rn-border bg-rn-surface/95 px-2 py-2 backdrop-blur-md md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none"
-            aria-label="التنقل"
+            aria-label={t("nav_label")}
           >
             <div className="mx-auto flex max-w-xl gap-1 md:flex-wrap md:gap-2">
-              {links.map((link) => {
+              {linkKeys.map((link) => {
                 const current = pathname === link.href || pathname.startsWith(`${link.href}/`);
                 return (
                   <Link
@@ -204,7 +206,7 @@ export function SignedInShell({ children }: SignedInShellProps) {
                         : "text-rn-muted hover:bg-rn-accent-soft hover:text-rn-ink"
                     }`}
                   >
-                    {link.label}
+                    {t(link.label)}
                   </Link>
                 );
               })}
@@ -212,16 +214,16 @@ export function SignedInShell({ children }: SignedInShellProps) {
           </nav>
         )}
       </header>
-      {revival.isPending ? <p className={mutedClass}>بنشوف الملاحظات القديمة...</p> : null}
+      {revival.isPending ? <p className={mutedClass}>{t("revival_checking")}</p> : null}
       {revival.isError ? (
         <div className="flex flex-col gap-3">
-          <p>مش قادرين نجيب الملاحظات القديمة</p>
+          <p>{t("revival_error")}</p>
           <button
             type="button"
             onClick={() => void revival.refetch()}
             className={`w-fit ${buttonSecondaryClass}`}
           >
-            حاول تاني
+            {t("try_again")}
           </button>
         </div>
       ) : null}

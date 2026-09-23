@@ -19,13 +19,15 @@ import {
 } from "@/lib/ui-classes";
 import ImageCapture from "./ImageCapture";
 import VoiceCapture from "./VoiceCapture";
+import type { UiKey } from "@/lib/ui-copy";
+import { translateIssue, useT } from "@/lib/use-t";
 
 const captureTypes = [
-  { id: "text", label: "نص" },
-  { id: "link", label: "رابط" },
-  { id: "voice", label: "صوت" },
-  { id: "image", label: "صورة" },
-] as const;
+  { id: "text", label: "type_text" },
+  { id: "link", label: "type_link" },
+  { id: "voice", label: "type_voice" },
+  { id: "image", label: "type_image" },
+] as const satisfies ReadonlyArray<{ id: string; label: UiKey }>;
 
 type CaptureType = (typeof captureTypes)[number]["id"];
 
@@ -35,6 +37,7 @@ type CaptureFields = {
 };
 
 export default function CaptureForm() {
+  const { t, locale } = useT();
   const queryClient = useQueryClient();
   const form = useForm<CaptureFields>({
     defaultValues: { content: "", note: "" },
@@ -63,13 +66,13 @@ export default function CaptureForm() {
         : { type: selectedType, content: values.content },
     );
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بنحفظ...");
+    const toastId = toast.loading(t("saving"));
     try {
       const response = await api("/items", {
         method: "POST",
@@ -82,14 +85,14 @@ export default function CaptureForm() {
         return;
       }
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     form.reset();
     await queryClient.invalidateQueries({ queryKey: ["items"] });
-    toast.success("اتحفظت", { id: toastId });
+    toast.success(t("saved"), { id: toastId });
   }
 
   let field: ReactNode;
@@ -98,7 +101,7 @@ export default function CaptureForm() {
       field = (
         <div>
           <label className={labelClass} htmlFor="capture-text">
-            الملاحظة
+            {t("note")}
           </label>
           <textarea
             id="capture-text"
@@ -115,7 +118,7 @@ export default function CaptureForm() {
         <>
           <div>
             <label className={labelClass} htmlFor="capture-link">
-              الرابط
+              {t("link")}
             </label>
             <input
               id="capture-link"
@@ -129,7 +132,7 @@ export default function CaptureForm() {
           </div>
           <div>
             <label className={labelClass} htmlFor="capture-link-note">
-              ملاحظة (اختياري)
+              {t("note_optional")}
             </label>
             <textarea
               id="capture-link-note"
@@ -154,7 +157,7 @@ export default function CaptureForm() {
       noValidate
       onSubmit={form.handleSubmit(onSubmit)}
     >
-      <div role="radiogroup" aria-label="النوع" className="flex flex-wrap gap-2">
+      <div role="radiogroup" aria-label={t("type_label")} className="flex flex-wrap gap-2">
         {captureTypes.map((captureType) => {
           const selected = selectedType === captureType.id;
           return (
@@ -166,7 +169,7 @@ export default function CaptureForm() {
               onClick={() => chooseType(captureType.id)}
               className={`${segmentBaseClass} ${selected ? segmentSelectedClass : segmentIdleClass}`}
             >
-              {captureType.label}
+              {t(captureType.label)}
             </button>
           );
         })}
@@ -184,7 +187,7 @@ export default function CaptureForm() {
             </p>
           ) : null}
           <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-            {form.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
+            {form.formState.isSubmitting ? t("saving") : t("save")}
           </button>
         </>
       )}

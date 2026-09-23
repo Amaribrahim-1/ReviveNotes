@@ -4,20 +4,22 @@ import { ITEM_STATUSES, ITEM_TYPES, type Category, type ItemStatus, type ItemTyp
 import { useQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
 import { alertClass, fieldClass, labelClass, mutedClass } from "@/lib/ui-classes";
+import type { UiKey } from "@/lib/ui-copy";
+import { useT } from "@/lib/use-t";
 import { useItemFilters } from "./use-item-filters";
 
-const statusLabel: Record<ItemStatus, string> = {
-  inbox: "الوارد",
-  active: "هشتغل عليها",
-  done: "خلصت",
-  archived: "أرشيف",
+const statusKey: Record<ItemStatus, UiKey> = {
+  inbox: "status_inbox",
+  active: "status_active",
+  done: "status_done",
+  archived: "status_archived",
 };
 
-const typeLabel: Record<ItemType, string> = {
-  text: "نص",
-  link: "رابط",
-  voice: "صوت",
-  image: "صورة",
+const typeKey: Record<ItemType, UiKey> = {
+  text: "type_text",
+  link: "type_link",
+  voice: "type_voice",
+  image: "type_image",
 };
 
 function readStatus(value: string): ItemStatus | "" {
@@ -35,6 +37,7 @@ function readType(value: string): ItemType | "" {
 }
 
 export default function ItemFilters() {
+  const { t } = useT();
   const categoryId = useItemFilters((state) => state.categoryId);
   const status = useItemFilters((state) => state.status);
   const type = useItemFilters((state) => state.type);
@@ -72,12 +75,12 @@ export default function ItemFilters() {
     <div className="flex flex-col gap-4">
       <div>
         <label className={labelClass} htmlFor="filter-category">
-          التصنيف
+          {t("category")}
         </label>
-        {categories.isPending ? <p className={mutedClass}>بنحمّل التصنيفات...</p> : null}
+        {categories.isPending ? <p className={mutedClass}>{t("loading_categories")}</p> : null}
         {categories.isError ? (
           <p className={alertClass} role="alert">
-            {categories.error instanceof Error ? categories.error.message : "حصل خطأ. حاول تاني."}
+            {categories.error instanceof Error ? categories.error.message : t("generic_error")}
           </p>
         ) : null}
         {categories.data ? (
@@ -87,7 +90,7 @@ export default function ItemFilters() {
             value={categoryId}
             onChange={(event) => setCategoryId(event.target.value)}
           >
-            <option value="">الكل</option>
+            <option value="">{t("filter_all")}</option>
             {categories.data.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -99,7 +102,7 @@ export default function ItemFilters() {
 
       <div>
         <label className={labelClass} htmlFor="filter-status">
-          الحالة
+          {t("status_label")}
         </label>
         <select
           id="filter-status"
@@ -107,10 +110,10 @@ export default function ItemFilters() {
           value={status}
           onChange={(event) => setStatus(readStatus(event.target.value))}
         >
-          <option value="">الكل</option>
+          <option value="">{t("filter_all")}</option>
           {ITEM_STATUSES.map((itemStatus) => (
             <option key={itemStatus} value={itemStatus}>
-              {statusLabel[itemStatus]}
+              {t(statusKey[itemStatus])}
             </option>
           ))}
         </select>
@@ -118,7 +121,7 @@ export default function ItemFilters() {
 
       <div>
         <label className={labelClass} htmlFor="filter-type">
-          النوع
+          {t("type_label")}
         </label>
         <select
           id="filter-type"
@@ -126,24 +129,24 @@ export default function ItemFilters() {
           value={type}
           onChange={(event) => setType(readType(event.target.value))}
         >
-          <option value="">الكل</option>
+          <option value="">{t("filter_all")}</option>
           {ITEM_TYPES.map((itemType) => (
             <option key={itemType} value={itemType}>
-              {typeLabel[itemType]}
+              {t(typeKey[itemType])}
             </option>
           ))}
         </select>
       </div>
 
       <fieldset className="flex flex-col gap-1">
-        <legend className={labelClass}>الوسوم</legend>
-        {tags.isPending ? <p className={mutedClass}>بنحمّل الوسوم...</p> : null}
+        <legend className={labelClass}>{t("tag_legend")}</legend>
+        {tags.isPending ? <p className={mutedClass}>{t("loading_tags")}</p> : null}
         {tags.isError ? (
           <p className={alertClass} role="alert">
-            {tags.error instanceof Error ? tags.error.message : "حصل خطأ. حاول تاني."}
+            {tags.error instanceof Error ? tags.error.message : t("generic_error")}
           </p>
         ) : null}
-        {tags.data && tags.data.length === 0 ? <p className={mutedClass}>لسه مفيش وسوم.</p> : null}
+        {tags.data && tags.data.length === 0 ? <p className={mutedClass}>{t("no_tags_yet")}</p> : null}
         {tags.data?.map((tag) => (
           <label key={tag.id} className="flex items-center gap-2 py-1">
             <input

@@ -6,11 +6,12 @@ alwaysApply: false
 
 # Web UI
 
-- UI copy is Arabic. Layout is RTL. Digits inside the UI are Western (`1 2 3`).
+- UI copy is bilingual: Arabic (default, RTL) and English (LTR). Toggle lives next to the theme button. Digits stay Western (`1 2 3`). English strings stay short and plain.
+- Screen labels live in `apps/web` UI copy. Zod and API errors use shared message keys from `packages/shared`.
 - TanStack Query owns server state: items, categories, tags, session user.
-- Zustand owns UI state only: open modal, selected filters, recorder state. Do not store item lists in Zustand.
+- Zustand owns UI state only: open modal, selected filters, recorder state, theme, locale. Do not store item lists in Zustand.
 - Cards, not tables. Capture has no title and does not require a category or tag.
-- Empty inbox: one short Arabic line. No onboarding tour.
+- Empty inbox: one short line. No onboarding tour.
 - Filters: category, status, and type are single-select combined with AND. Tags are multi-select combined with OR.
 - Tailwind classes only. No `style={{}}`.
 - One component per file. The file name matches the default export (`ItemCard.tsx` exports `ItemCard`).

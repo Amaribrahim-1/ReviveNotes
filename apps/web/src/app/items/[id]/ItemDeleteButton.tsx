@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { buttonDangerClass, buttonSecondaryClass } from "@/lib/ui-classes";
+import { translateIssue, useT } from "@/lib/use-t";
 
 type ItemDeleteButtonProps = {
   pending: boolean;
@@ -7,6 +8,7 @@ type ItemDeleteButtonProps = {
 };
 
 export default function ItemDeleteButton({ pending, onDelete }: ItemDeleteButtonProps) {
+  const { t, locale } = useT();
   const [confirming, setConfirming] = useState(false);
 
   if (!confirming) {
@@ -18,7 +20,7 @@ export default function ItemDeleteButton({ pending, onDelete }: ItemDeleteButton
           disabled={pending}
           onClick={() => setConfirming(true)}
         >
-          حذف نهائي
+          {t("delete_forever")}
         </button>
       </div>
     );
@@ -26,10 +28,10 @@ export default function ItemDeleteButton({ pending, onDelete }: ItemDeleteButton
 
   return (
     <div className="flex flex-col gap-3 border-t border-rn-border pt-4">
-      <p>الحذف نهائي والملاحظة مش هترجع.</p>
+      <p>{t("delete_forever_warn")}</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={buttonDangerClass} disabled={pending} onClick={onDelete}>
-          {pending ? "بنحذف..." : "تأكيد الحذف"}
+          {pending ? t("deleting") : t("confirm_delete")}
         </button>
         <button
           type="button"
@@ -37,7 +39,7 @@ export default function ItemDeleteButton({ pending, onDelete }: ItemDeleteButton
           disabled={pending}
           onClick={() => setConfirming(false)}
         >
-          إلغاء
+          {t("cancel")}
         </button>
       </div>
     </div>

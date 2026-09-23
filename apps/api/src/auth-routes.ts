@@ -19,6 +19,7 @@ import {
 import { prisma } from "./db.js";
 import { publicUserSelect, toPublicUser } from "./public-user.js";
 import { tooManyAttempts } from "./rate-limit.js";
+import { issueMessage, msg } from "./request-locale.js";
 import {
   clearAuthCookies,
   hashRefreshToken,
@@ -33,10 +34,6 @@ let dummyHash: string | null = null;
 
 function requestIp(req: Request): string {
   return req.ip || req.socket.remoteAddress || "unknown";
-}
-
-function firstIssueMessage(issues: { message: string }[]): string {
-  return issues[0]?.message ?? "البيانات مش مظبوطة";
 }
 
 function isEmailTakenError(error: unknown): boolean {
@@ -58,12 +55,12 @@ async function passwordIsCorrect(password: string, passwordHash: string | null):
 export async function register(req: Request, res: Response) {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
   if (tooManyAttempts(requestIp(req), parsed.data.email)) {
-    res.status(429).json({ error: TOO_MANY_ATTEMPTS });
+    res.status(429).json({ error: msg(req, TOO_MANY_ATTEMPTS) });
     return;
   }
 
@@ -72,7 +69,7 @@ export async function register(req: Request, res: Response) {
     select: { id: true },
   });
   if (existing) {
-    res.status(409).json({ error: EMAIL_IN_USE });
+    res.status(409).json({ error: msg(req, EMAIL_IN_USE) });
     return;
   }
 
@@ -84,7 +81,7 @@ export async function register(req: Request, res: Response) {
     res.status(201).json(toPublicUser(user));
   } catch (error) {
     if (isEmailTakenError(error)) {
-      res.status(409).json({ error: EMAIL_IN_USE });
+      res.status(409).json({ error: msg(req, EMAIL_IN_USE) });
       return;
     }
     throw error;
@@ -109,26 +106,26 @@ async function createUser(input: RegisterInput, passwordHash: string): Promise<P
 export async function login(req: Request, res: Response) {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
   if (tooManyAttempts(requestIp(req), parsed.data.email)) {
-    res.status(429).json({ error: TOO_MANY_ATTEMPTS });
+    res.status(429).json({ error: msg(req, TOO_MANY_ATTEMPTS) });
     return;
   }
 
-  await startLogin(parsed.data, res);
+  await startLogin(req, parsed.data, res);
 }
 
-async function startLogin(input: LoginInput, res: Response) {
+async function startLogin(req: Request, input: LoginInput, res: Response) {
   const user = await prisma.user.findUnique({
     where: { email: input.email },
   });
 
   const matches = await passwordIsCorrect(input.password, user?.password_hash ?? null);
   if (!user || !matches) {
-    res.status(401).json({ error: LOGIN_FAILED });
+    res.status(401).json({ error: msg(req, LOGIN_FAILED) });
     return;
   }
 
@@ -148,7 +145,7 @@ async function startLogin(input: LoginInput, res: Response) {
 export async function refresh(req: Request, res: Response) {
   const token = readRefreshCookie(req.header("cookie"));
   if (!token) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 
@@ -157,7 +154,7 @@ export async function refresh(req: Request, res: Response) {
   });
 
   if (!row) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 
@@ -168,12 +165,12 @@ export async function refresh(req: Request, res: Response) {
       data: { revoked_at: new Date() },
     });
     clearAuthCookies(res);
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 
   if (row.expires_at.getTime() <= Date.now()) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 
@@ -182,7 +179,7 @@ export async function refresh(req: Request, res: Response) {
     select: publicUserSelect,
   });
   if (!user) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 

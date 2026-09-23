@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { api, apiError } from "@/lib/api";
 import { alertClass, buttonSecondaryClass } from "@/lib/ui-classes";
+import { useT } from "@/lib/use-t";
 
 type VoicePlayButtonProps = {
   itemId: string;
 };
 
 export default function VoicePlayButton({ itemId }: VoicePlayButtonProps) {
+  const { t } = useT();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -38,7 +40,7 @@ export default function VoicePlayButton({ itemId }: VoicePlayButtonProps) {
         await current.play();
         setPlaying(true);
       } catch {
-        setError("مش قادرين نشغّل التسجيل");
+        setError(t("voice_play_error"));
       }
       return;
     }
@@ -61,13 +63,13 @@ export default function VoicePlayButton({ itemId }: VoicePlayButtonProps) {
       await audio.play();
       setPlaying(true);
     } catch {
-      setError("مش قادرين نشغّل التسجيل");
+      setError(t("voice_play_error"));
     } finally {
       setLoading(false);
     }
   }
 
-  const label = playing ? "إيقاف التسجيل" : "تشغيل التسجيل";
+  const label = playing ? t("voice_stop") : t("voice_play");
 
   return (
     <div className="flex flex-col items-start gap-2">
@@ -80,7 +82,7 @@ export default function VoicePlayButton({ itemId }: VoicePlayButtonProps) {
         }}
         className={buttonSecondaryClass}
       >
-        {loading ? "بنحمّل..." : playing ? "إيقاف" : "تشغيل"}
+        {loading ? t("loading") : playing ? t("voice_pause") : t("voice_play_short")}
       </button>
       {error ? (
         <p className={alertClass} role="alert">

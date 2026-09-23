@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import ThemeToggle from "@/components/ThemeToggle";
+import HeaderToggles from "@/components/HeaderToggles";
 import { api, apiError } from "@/lib/api";
 import { createRememberedShare, hasRememberedShare } from "@/lib/pending-share";
 import {
@@ -19,6 +19,7 @@ import {
   surfacePanelClass,
   titleClass,
 } from "@/lib/ui-classes";
+import { translateIssue, useT } from "@/lib/use-t";
 
 type RegisterFields = {
   email: string;
@@ -26,6 +27,7 @@ type RegisterFields = {
 };
 
 export default function RegisterPage() {
+  const { t, locale } = useT();
   const form = useForm<RegisterFields>({
     defaultValues: { email: "", password: "" },
   });
@@ -44,13 +46,13 @@ export default function RegisterPage() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بنسجل...");
+    const toastId = toast.loading(t("registering"));
     try {
       const response = await api("/auth/register", {
         method: "POST",
@@ -63,20 +65,20 @@ export default function RegisterPage() {
         return;
       }
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     const share = await createRememberedShare();
     if (share === "error") {
-      const message = "التسجيل تم، والرابط لسه محفوظ. اضغط تسجيل تاني عشان نسجله.";
+      const message = t("share_register_retry");
       setError(message);
       toast.error(message, { id: toastId });
       return;
     }
 
-    toast.success("اتعمل الحساب", { id: toastId });
+    toast.success(t("account_created"), { id: toastId });
     window.location.assign("/inbox");
   }
 
@@ -84,14 +86,14 @@ export default function RegisterPage() {
     <main className={authPageClass}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className={`mb-1 text-sm ${mutedClass}`}>ريفايف نوتس</p>
-          <h1 className={titleClass}>حساب جديد</h1>
+          <p className={`mb-1 text-sm ${mutedClass}`}>{t("app_name")}</p>
+          <h1 className={titleClass}>{t("register")}</h1>
         </div>
-        <ThemeToggle />
+        <HeaderToggles />
       </div>
       {holdingShare ? (
         <p role="status" className={`${surfacePanelClass} text-sm`}>
-          فيه رابط مستني. هيتحفظ في الوارد بعد التسجيل.
+          {t("share_holding_register")}
         </p>
       ) : null}
       <form
@@ -102,7 +104,7 @@ export default function RegisterPage() {
       >
         <div>
           <label className={labelClass} htmlFor="register-email">
-            البريد
+            {t("email")}
           </label>
           <input
             id="register-email"
@@ -114,7 +116,7 @@ export default function RegisterPage() {
         </div>
         <div>
           <label className={labelClass} htmlFor="register-password">
-            كلمة السر
+            {t("password")}
           </label>
           <input
             id="register-password"
@@ -130,12 +132,12 @@ export default function RegisterPage() {
           </p>
         ) : null}
         <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-          {form.formState.isSubmitting ? "بنسجل..." : "تسجيل"}
+          {form.formState.isSubmitting ? t("registering") : t("register_submit")}
         </button>
       </form>
       <p className={mutedClass}>
         <Link href="/login" className={linkClass}>
-          عندك حساب؟ ادخل
+          {t("have_account")}
         </Link>
       </p>
     </main>

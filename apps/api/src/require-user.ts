@@ -3,18 +3,19 @@ import type { NextFunction, Request, Response } from "express";
 import { LOGIN_REQUIRED } from "./auth-messages.js";
 import { prisma } from "./db.js";
 import { publicUserSelect, toPublicUser } from "./public-user.js";
+import { msg } from "./request-locale.js";
 import { readAccessCookie, readAccessToken } from "./session.js";
 
 export async function requireUser(req: Request, res: Response, next: NextFunction) {
   const token = readAccessCookie(req.header("cookie"));
   if (!token) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 
   const access = readAccessToken(token);
   if (!access) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 
@@ -30,7 +31,7 @@ export async function requireUser(req: Request, res: Response, next: NextFunctio
   });
 
   if (!liveSession) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 
@@ -40,7 +41,7 @@ export async function requireUser(req: Request, res: Response, next: NextFunctio
   });
 
   if (!user) {
-    res.status(401).json({ error: LOGIN_REQUIRED });
+    res.status(401).json({ error: msg(req, LOGIN_REQUIRED) });
     return;
   }
 

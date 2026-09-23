@@ -1,4 +1,5 @@
-import { CATEGORY_COLORS, type CategoryColor } from "@revivenotes/shared";
+import { CATEGORY_COLORS, type CategoryColor, type Locale } from "@revivenotes/shared";
+import { tUi } from "@/lib/ui-copy";
 
 export const categoryColorClass: Record<CategoryColor, string> = {
   red: "bg-red-500",
@@ -11,16 +12,20 @@ export const categoryColorClass: Record<CategoryColor, string> = {
   pink: "bg-pink-500",
 };
 
-export const categoryColorLabel: Record<CategoryColor, string> = {
-  red: "أحمر",
-  orange: "برتقالي",
-  amber: "ذهبي",
-  green: "أخضر",
-  teal: "تركوازي",
-  blue: "أزرق",
-  violet: "بنفسجي",
-  pink: "وردي",
-};
+const colorKey = {
+  red: "color_red",
+  orange: "color_orange",
+  amber: "color_amber",
+  green: "color_green",
+  teal: "color_teal",
+  blue: "color_blue",
+  violet: "color_violet",
+  pink: "color_pink",
+} as const;
+
+export function categoryColorLabel(locale: Locale, color: CategoryColor): string {
+  return tUi(locale, colorKey[color]);
+}
 
 export function knownCategoryColor(color: string): CategoryColor | null {
   for (const item of CATEGORY_COLORS) {

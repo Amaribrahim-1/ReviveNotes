@@ -15,23 +15,23 @@ export type ItemStatus = (typeof ITEM_STATUSES)[number];
 export type ItemType = (typeof ITEM_TYPES)[number];
 
 export const textContentSchema = z
-  .string({ error: "اكتب الملاحظة" })
+  .string({ error: "note_required" })
   .trim()
-  .min(1, { error: "اكتب الملاحظة" })
-  .max(TEXT_MAX_LENGTH, { error: `الملاحظة أطول من ${TEXT_MAX_LENGTH} حرف` });
+  .min(1, { error: "note_required" })
+  .max(TEXT_MAX_LENGTH, { error: "note_too_long" });
 
 export const linkContentSchema = z
-  .string({ error: "اكتب الرابط" })
+  .string({ error: "link_required" })
   .trim()
-  .min(1, { error: "اكتب الرابط" })
-  .max(LINK_MAX_LENGTH, { error: `الرابط أطول من ${LINK_MAX_LENGTH} حرف` })
-  .pipe(z.url({ protocol: /^https?$/, error: "الرابط لازم يبدأ بـ http أو https" }));
+  .min(1, { error: "link_required" })
+  .max(LINK_MAX_LENGTH, { error: "link_too_long" })
+  .pipe(z.url({ protocol: /^https?$/, error: "link_protocol" }));
 
 // Empty and whitespace become null. The words never go into content.
 export const itemNoteSchema = z
-  .string({ error: "الملاحظة مش مظبوطة" })
+  .string({ error: "note_invalid" })
   .trim()
-  .max(TEXT_MAX_LENGTH, { error: `الملاحظة أطول من ${TEXT_MAX_LENGTH} حرف` })
+  .max(TEXT_MAX_LENGTH, { error: "note_too_long" })
   .transform((value) => (value.length === 0 ? null : value));
 
 const textItemSchema = z.object({
@@ -46,43 +46,43 @@ const linkItemSchema = z.object({
 });
 
 export const createItemSchema = z.discriminatedUnion("type", [textItemSchema, linkItemSchema], {
-  error: "اختار نص أو رابط",
+  error: "pick_text_or_link",
 });
 
 // The multipart field arrives as text. 0 through 600 are accepted. 601 is not.
 export const voiceDurationSchema = z
-  .string({ error: "مدة التسجيل مش مظبوطة" })
+  .string({ error: "voice_duration_invalid" })
   .trim()
-  .regex(/^\d{1,3}$/, { error: "مدة التسجيل مش مظبوطة" })
+  .regex(/^\d{1,3}$/, { error: "voice_duration_invalid" })
   .transform((value) => Number(value))
-  .refine((value) => value <= VOICE_MAX_SECONDS, { error: "التسجيل أطول من 10 دقايق" });
+  .refine((value) => value <= VOICE_MAX_SECONDS, { error: "voice_too_long" });
 
 export const imageContentTypeSchema = z.enum(IMAGE_CONTENT_TYPES, {
-  error: "نوع الصورة لازم يكون jpeg أو png أو webp أو gif",
+  error: "image_type",
 });
 
 const tagIdSchema = z
-  .string({ error: "الوسم مش موجود" })
+  .string({ error: "tag_missing" })
   .trim()
-  .min(1, { error: "الوسم مش موجود" });
+  .min(1, { error: "tag_missing" });
 
 // One `tag` value arrives as a string. Repeated `tag` values arrive as an array.
 // Missing `tag` stays missing, so the list does not filter by tags.
 const tagQuerySchema = z.union([tagIdSchema, z.array(tagIdSchema)], {
-  error: "الوسم مش موجود",
+  error: "tag_missing",
 });
 
 export const itemListQuerySchema = z
   .object({
-    status: z.enum(ITEM_STATUSES, { error: "الحالة مش معروفة" }).optional(),
-    type: z.enum(ITEM_TYPES, { error: "النوع مش معروف" }).optional(),
+    status: z.enum(ITEM_STATUSES, { error: "status_unknown" }).optional(),
+    type: z.enum(ITEM_TYPES, { error: "type_unknown" }).optional(),
     category_id: z
-      .string({ error: "التصنيف مش موجود" })
+      .string({ error: "category_missing" })
       .trim()
-      .min(1, { error: "التصنيف مش موجود" })
+      .min(1, { error: "category_missing" })
       .optional(),
     tag: tagQuerySchema.optional(),
-    cursor: z.string({ error: "المؤشر مش مفهوم" }).trim().optional(),
+    cursor: z.string({ error: "cursor_invalid" }).trim().optional(),
   })
   .transform((query) => {
     const tag = query.tag;
@@ -98,21 +98,21 @@ export const itemListQuerySchema = z
 // Every field is optional. tag_ids, when sent, is the full set for that item.
 export const updateItemSchema = z.object({
   content: z
-    .string({ error: "اكتب المحتوى" })
+    .string({ error: "content_required" })
     .trim()
-    .min(1, { error: "اكتب المحتوى" })
-    .max(TEXT_MAX_LENGTH, { error: `المحتوى أطول من ${TEXT_MAX_LENGTH} حرف` })
+    .min(1, { error: "content_required" })
+    .max(TEXT_MAX_LENGTH, { error: "content_too_long" })
     .optional(),
-  status: z.enum(ITEM_STATUSES, { error: "الحالة مش معروفة" }).optional(),
+  status: z.enum(ITEM_STATUSES, { error: "status_unknown" }).optional(),
   category_id: z
-    .string({ error: "التصنيف مش موجود" })
+    .string({ error: "category_missing" })
     .trim()
-    .min(1, { error: "التصنيف مش موجود" })
+    .min(1, { error: "category_missing" })
     .nullable()
     .optional(),
   tag_ids: z
-    .array(z.string({ error: "الوسم مش موجود" }).trim().min(1, { error: "الوسم مش موجود" }), {
-      error: "الوسوم مش مظبوطة",
+    .array(z.string({ error: "tag_missing" }).trim().min(1, { error: "tag_missing" }), {
+      error: "tags_invalid",
     })
     .optional(),
   note: z.union([itemNoteSchema, z.null()]).optional(),

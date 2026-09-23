@@ -1,25 +1,25 @@
 import { z } from "zod";
 
 const emailField = z
-  .string({ error: "اكتب البريد" })
+  .string({ error: "email_required" })
   .trim()
   .toLowerCase()
-  .pipe(z.email({ error: "البريد مش صحيح" }));
+  .pipe(z.email({ error: "email_invalid" }));
 
 const passwordField = z
-  .string({ error: "اكتب كلمة السر" })
-  .min(8, { error: "كلمة السر لازم تكون 8 حروف على الأقل" })
+  .string({ error: "password_required" })
+  .min(8, { error: "password_min" })
   .refine((value) => new TextEncoder().encode(value).length <= 72, {
-    error: "كلمة السر أطول من المسموح",
+    error: "password_too_long",
   });
 
 export const registerSchema = z.object({
   email: emailField,
   password: passwordField,
   timezone: z
-    .string({ error: "المنطقة الزمنية ناقصة" })
+    .string({ error: "timezone_required" })
     .trim()
-    .min(1, { error: "المنطقة الزمنية ناقصة" }),
+    .min(1, { error: "timezone_required" }),
 });
 
 export const loginSchema = z.object({

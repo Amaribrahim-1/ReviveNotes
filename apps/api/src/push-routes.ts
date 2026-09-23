@@ -2,11 +2,8 @@ import { pushSubscriptionSchema } from "@revivenotes/shared";
 import type { Request, Response } from "express";
 import { NOT_FOUND } from "./label-messages.js";
 import { prisma } from "./db.js";
+import { issueMessage, msg } from "./request-locale.js";
 import { readSignedInUser } from "./require-user.js";
-
-function firstIssueMessage(issues: { message: string }[]): string {
-  return issues[0]?.message ?? "البيانات مش مظبوطة";
-}
 
 function paramId(req: Request): string | null {
   const id = req.params.id;
@@ -16,10 +13,10 @@ function paramId(req: Request): string | null {
   return id;
 }
 
-export function vapidPublicKey(_req: Request, res: Response) {
+export function vapidPublicKey(req: Request, res: Response) {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   if (!publicKey) {
-    res.status(500).json({ error: "مفتاح الإشعار ناقص" });
+    res.status(500).json({ error: msg(req, "push_vapid_missing") });
     return;
   }
   res.json({ public_key: publicKey });
@@ -28,7 +25,7 @@ export function vapidPublicKey(_req: Request, res: Response) {
 export async function createPushSubscription(req: Request, res: Response) {
   const parsed = pushSubscriptionSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
@@ -68,7 +65,7 @@ export async function deletePushSubscription(req: Request, res: Response) {
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -77,7 +74,7 @@ export async function deletePushSubscription(req: Request, res: Response) {
     select: { id: true },
   });
   if (!existing) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 

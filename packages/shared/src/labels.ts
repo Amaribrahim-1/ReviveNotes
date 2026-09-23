@@ -14,12 +14,12 @@ export const CATEGORY_COLORS = [
 export type CategoryColor = (typeof CATEGORY_COLORS)[number];
 
 const nameField = z
-  .string({ error: "اكتب الاسم" })
+  .string({ error: "name_required" })
   .trim()
-  .min(1, { error: "اكتب الاسم" });
+  .min(1, { error: "name_required" });
 
 const categoryColorSchema = z.enum(CATEGORY_COLORS, {
-  error: "اختار لون من الألوان المتاحة",
+  error: "color_invalid",
 });
 
 export const categorySchema = z.object({

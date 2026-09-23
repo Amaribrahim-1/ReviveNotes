@@ -5,12 +5,14 @@ import {
   segmentIdleClass,
   segmentSelectedClass,
 } from "@/lib/ui-classes";
+import type { UiKey } from "@/lib/ui-copy";
+import { useT } from "@/lib/use-t";
 
-const statusLabel: Record<ItemStatus, string> = {
-  inbox: "الوارد",
-  active: "هشتغل عليها",
-  done: "خلصت",
-  archived: "أرشيف",
+const statusKey: Record<ItemStatus, UiKey> = {
+  inbox: "status_inbox",
+  active: "status_active",
+  done: "status_done",
+  archived: "status_archived",
 };
 
 type ItemStatusControlsProps = {
@@ -20,10 +22,12 @@ type ItemStatusControlsProps = {
 };
 
 export default function ItemStatusControls({ item, pending, onSave }: ItemStatusControlsProps) {
+  const { t } = useT();
+
   return (
     <div>
       <p className={labelClass} id="item-status-label">
-        الحالة
+        {t("status_label")}
       </p>
       <div role="group" aria-labelledby="item-status-label" className="flex flex-wrap gap-2">
         {ITEM_STATUSES.map((status) => {
@@ -42,7 +46,7 @@ export default function ItemStatusControls({ item, pending, onSave }: ItemStatus
               }}
               className={`${segmentBaseClass} ${selected ? segmentSelectedClass : segmentIdleClass}`}
             >
-              {statusLabel[status]}
+              {t(statusKey[status])}
             </button>
           );
         })}

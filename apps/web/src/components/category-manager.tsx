@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import { categoryColorClass, categoryColorLabel, knownCategoryColor } from "@/lib/category-colors";
+import { translateIssue, useT } from "@/lib/use-t";
 import {
   alertClass,
   buttonClass,
@@ -30,12 +31,13 @@ type ColorSwatchesProps = {
 };
 
 function ColorSwatches({ idPrefix, value, onChange }: ColorSwatchesProps) {
+  const { t, locale } = useT();
   const labelId = `${idPrefix}-color-label`;
 
   return (
     <div>
       <p className={labelClass} id={labelId}>
-        اللون
+        {t("color")}
       </p>
       <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-2">
         {CATEGORY_COLORS.map((color) => {
@@ -46,19 +48,20 @@ function ColorSwatches({ idPrefix, value, onChange }: ColorSwatchesProps) {
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={categoryColorLabel[color]}
+              aria-label={categoryColorLabel(locale, color)}
               onClick={() => onChange(color)}
               className={`h-11 w-11 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent ${categoryColorClass[color]} ${selected ? "ring-2 ring-rn-ink ring-offset-2 ring-offset-rn-surface" : ""}`}
             />
           );
         })}
       </div>
-      <p className="mt-2 text-sm">{categoryColorLabel[value]}</p>
+      <p className="mt-2 text-sm">{categoryColorLabel(locale, value)}</p>
     </div>
   );
 }
 
 export function CategoryManager() {
+  const { t, locale } = useT();
   const queryClient = useQueryClient();
   const form = useForm<CategoryInput>({
     defaultValues: { name: "", color: "blue" },
@@ -93,13 +96,13 @@ export function CategoryManager() {
     setFormError(null);
     const parsed = categorySchema.safeParse(values);
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setFormError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بنضيف...");
+    const toastId = toast.loading(t("adding"));
     try {
       const response = await api("/categories", {
         method: "POST",
@@ -112,14 +115,14 @@ export function CategoryManager() {
         return;
       }
     } catch {
-      setFormError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setFormError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     form.reset({ name: "", color: "blue" });
     await refresh();
-    toast.success("اتضاف التصنيف", { id: toastId });
+    toast.success(t("category_added"), { id: toastId });
   }
 
   function startEdit(category: Category) {
@@ -137,13 +140,13 @@ export function CategoryManager() {
     setFormError(null);
     const parsed = categorySchema.safeParse(values);
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setFormError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بنحفظ...");
+    const toastId = toast.loading(t("saving"));
     try {
       const response = await api(`/categories/${editingId}`, {
         method: "PATCH",
@@ -156,20 +159,20 @@ export function CategoryManager() {
         return;
       }
     } catch {
-      setFormError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setFormError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     setEditingId(null);
     await refresh();
-    toast.success("اتحفظ التصنيف", { id: toastId });
+    toast.success(t("category_saved"), { id: toastId });
   }
 
   async function onDelete(id: string) {
     setDeleting(true);
     setFormError(null);
-    const toastId = toast.loading("بنحذف...");
+    const toastId = toast.loading(t("deleting"));
     try {
       const response = await api(`/categories/${id}`, { method: "DELETE" });
       if (!response.ok) {
@@ -179,8 +182,8 @@ export function CategoryManager() {
         return;
       }
     } catch {
-      setFormError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setFormError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     } finally {
       setDeleting(false);
@@ -191,16 +194,16 @@ export function CategoryManager() {
     }
     setConfirmId(null);
     await refresh();
-    toast.success("اتحذف التصنيف", { id: toastId });
+    toast.success(t("category_deleted"), { id: toastId });
   }
 
   return (
     <section className={`${surfacePanelClass} flex flex-col gap-4`}>
-      <h2 className="text-xl font-semibold tracking-tight">التصنيفات</h2>
+      <h2 className="text-xl font-semibold tracking-tight">{t("categories")}</h2>
       <form className="flex flex-col gap-4" noValidate onSubmit={form.handleSubmit(onCreate)}>
         <div>
           <label className={labelClass} htmlFor="new-category-name">
-            الاسم
+            {t("name")}
           </label>
           <input
             id="new-category-name"
@@ -216,7 +219,7 @@ export function CategoryManager() {
           onChange={(color) => form.setValue("color", color)}
         />
         <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-          {form.formState.isSubmitting ? "بنضيف..." : "إضافة تصنيف"}
+          {form.formState.isSubmitting ? t("adding") : t("add_category")}
         </button>
       </form>
 
@@ -226,11 +229,11 @@ export function CategoryManager() {
         </p>
       ) : null}
 
-      {categories.isPending ? <p className={mutedClass}>بنحمّل التصنيفات...</p> : null}
+      {categories.isPending ? <p className={mutedClass}>{t("loading_categories")}</p> : null}
       {categories.isError ? <p role="alert">{categories.error.message}</p> : null}
 
       {categories.data && categories.data.length === 0 ? (
-        <p className={mutedClass}>لسه مفيش تصنيفات.</p>
+        <p className={mutedClass}>{t("no_categories_yet")}</p>
       ) : null}
 
       {categories.data && categories.data.length > 0 ? (
@@ -243,7 +246,7 @@ export function CategoryManager() {
                   <form className="flex flex-col gap-3" noValidate onSubmit={editForm.handleSubmit(onRename)}>
                     <div>
                       <label className={labelClass} htmlFor="edit-category-name">
-                        الاسم
+                        {t("name")}
                       </label>
                       <input
                         id="edit-category-name"
@@ -260,10 +263,10 @@ export function CategoryManager() {
                     />
                     <div className="flex gap-2">
                       <button type="submit" disabled={editForm.formState.isSubmitting} className={buttonClass}>
-                        {editForm.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
+                        {editForm.formState.isSubmitting ? t("saving") : t("save")}
                       </button>
                       <button type="button" onClick={() => setEditingId(null)} className={buttonSecondaryClass}>
-                        إلغاء
+                        {t("cancel")}
                       </button>
                     </div>
                   </form>
@@ -274,21 +277,21 @@ export function CategoryManager() {
                         className={`inline-block h-4 w-4 rounded-full ${color ? categoryColorClass[color] : "bg-rn-border"}`}
                       />
                       <span>{category.name}</span>
-                      {color ? <span className="text-sm text-rn-muted">{categoryColorLabel[color]}</span> : null}
+                      {color ? <span className="text-sm text-rn-muted">{categoryColorLabel(locale, color)}</span> : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={() => startEdit(category)} className={buttonSecondaryClass}>
-                        تعديل
+                        {t("edit")}
                       </button>
                       {confirmId === category.id ? null : (
                         <button type="button" onClick={() => setConfirmId(category.id)} className={buttonSecondaryClass}>
-                          حذف
+                          {t("delete")}
                         </button>
                       )}
                     </div>
                     {confirmId === category.id ? (
                       <div className="flex flex-col gap-2">
-                        <p>حذف التصنيف ده؟ العناصر هتفضل من غير تصنيف.</p>
+                        <p>{t("delete_category_confirm")}</p>
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -296,10 +299,10 @@ export function CategoryManager() {
                             disabled={deleting}
                             className={buttonClass}
                           >
-                            {deleting ? "بنحذف..." : "تأكيد الحذف"}
+                            {deleting ? t("deleting") : t("confirm_delete")}
                           </button>
                           <button type="button" onClick={() => setConfirmId(null)} className={buttonSecondaryClass}>
-                            إلغاء
+                            {t("cancel")}
                           </button>
                         </div>
                       </div>

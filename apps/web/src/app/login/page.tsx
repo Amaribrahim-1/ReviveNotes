@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import ThemeToggle from "@/components/ThemeToggle";
+import HeaderToggles from "@/components/HeaderToggles";
 import { api, apiError } from "@/lib/api";
 import { createRememberedShare, hasRememberedShare } from "@/lib/pending-share";
 import {
@@ -19,6 +19,7 @@ import {
   surfacePanelClass,
   titleClass,
 } from "@/lib/ui-classes";
+import { translateIssue, useT } from "@/lib/use-t";
 
 type LoginFields = {
   email: string;
@@ -26,6 +27,7 @@ type LoginFields = {
 };
 
 export default function LoginPage() {
+  const { t, locale } = useT();
   const form = useForm<LoginFields>({
     defaultValues: { email: "", password: "" },
   });
@@ -40,13 +42,13 @@ export default function LoginPage() {
     setError(null);
     const parsed = loginSchema.safeParse(values);
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بندخل...");
+    const toastId = toast.loading(t("signing_in"));
     try {
       const response = await api("/auth/login", {
         method: "POST",
@@ -59,20 +61,20 @@ export default function LoginPage() {
         return;
       }
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     const share = await createRememberedShare();
     if (share === "error") {
-      const message = "الدخول تم، والرابط لسه محفوظ. اضغط دخول تاني عشان نسجله.";
+      const message = t("share_login_retry");
       setError(message);
       toast.error(message, { id: toastId });
       return;
     }
 
-    toast.success("اتسجل دخولك", { id: toastId });
+    toast.success(t("signed_in"), { id: toastId });
     window.location.assign("/inbox");
   }
 
@@ -80,14 +82,14 @@ export default function LoginPage() {
     <main className={authPageClass}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className={`mb-1 text-sm ${mutedClass}`}>ريفايف نوتس</p>
-          <h1 className={titleClass}>دخول</h1>
+          <p className={`mb-1 text-sm ${mutedClass}`}>{t("app_name")}</p>
+          <h1 className={titleClass}>{t("login")}</h1>
         </div>
-        <ThemeToggle />
+        <HeaderToggles />
       </div>
       {holdingShare ? (
         <p role="status" className={`${surfacePanelClass} text-sm`}>
-          فيه رابط مستني. هيتحفظ في الوارد بعد الدخول.
+          {t("share_holding_login")}
         </p>
       ) : null}
       <form
@@ -98,7 +100,7 @@ export default function LoginPage() {
       >
         <div>
           <label className={labelClass} htmlFor="login-email">
-            البريد
+            {t("email")}
           </label>
           <input
             id="login-email"
@@ -110,7 +112,7 @@ export default function LoginPage() {
         </div>
         <div>
           <label className={labelClass} htmlFor="login-password">
-            كلمة السر
+            {t("password")}
           </label>
           <input
             id="login-password"
@@ -126,12 +128,12 @@ export default function LoginPage() {
           </p>
         ) : null}
         <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-          {form.formState.isSubmitting ? "بندخل..." : "دخول"}
+          {form.formState.isSubmitting ? t("signing_in") : t("login")}
         </button>
       </form>
       <p className={mutedClass}>
         <Link href="/register" className={linkClass}>
-          حساب جديد
+          {t("register")}
         </Link>
       </p>
     </main>

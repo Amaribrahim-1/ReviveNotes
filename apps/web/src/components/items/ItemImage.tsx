@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-quer
 import { useEffect } from "react";
 import { api, apiError } from "@/lib/api";
 import { alertClass, mutedClass } from "@/lib/ui-classes";
+import { useT } from "@/lib/use-t";
 
 type ItemImageProps = {
   itemId: string;
@@ -54,6 +55,7 @@ function watchItemFileCache(queryClient: QueryClient) {
 }
 
 export default function ItemImage({ itemId, size }: ItemImageProps) {
+  const { t } = useT();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export default function ItemImage({ itemId, size }: ItemImageProps) {
   });
 
   if (file.isError) {
-    const message = file.error instanceof Error ? file.error.message : "مش قادرين نعرض الصورة";
+    const message = file.error instanceof Error ? file.error.message : t("image_load_error");
     return (
       <p className={alertClass} role="alert">
         {message}
@@ -86,11 +88,11 @@ export default function ItemImage({ itemId, size }: ItemImageProps) {
   }
 
   if (!file.data) {
-    return <p className={mutedClass}>بنحمّل الصورة...</p>;
+    return <p className={mutedClass}>{t("loading_image")}</p>;
   }
 
   const className =
     size === "thumb" ? "h-24 w-24 rounded-xl object-cover" : "h-auto w-full rounded-xl object-contain";
 
-  return <img src={urlForItemFile(itemId, file.data)} alt="صورة الملاحظة" className={className} />;
+  return <img src={urlForItemFile(itemId, file.data)} alt={t("image_note_alt")} className={className} />;
 }

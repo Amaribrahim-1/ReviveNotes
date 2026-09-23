@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { NAME_TAKEN, NOT_FOUND } from "./label-messages.js";
 import { isUniqueNameError, nameKey } from "./name-key.js";
 import { prisma } from "./db.js";
+import { issueMessage, msg } from "./request-locale.js";
 import { readSignedInUser } from "./require-user.js";
 
 const categorySelect = {
@@ -10,10 +11,6 @@ const categorySelect = {
   name: true,
   color: true,
 } as const;
-
-function firstIssueMessage(issues: { message: string }[]): string {
-  return issues[0]?.message ?? "البيانات مش مظبوطة";
-}
 
 function paramId(req: Request): string | null {
   const id = req.params.id;
@@ -36,7 +33,7 @@ export async function listCategories(_req: Request, res: Response) {
 export async function createCategory(req: Request, res: Response) {
   const parsed = categorySchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
@@ -47,7 +44,7 @@ export async function createCategory(req: Request, res: Response) {
     select: { id: true },
   });
   if (taken) {
-    res.status(400).json({ error: NAME_TAKEN });
+    res.status(400).json({ error: msg(req, NAME_TAKEN) });
     return;
   }
 
@@ -64,7 +61,7 @@ export async function createCategory(req: Request, res: Response) {
     res.status(201).json(category);
   } catch (error) {
     if (isUniqueNameError(error)) {
-      res.status(400).json({ error: NAME_TAKEN });
+      res.status(400).json({ error: msg(req, NAME_TAKEN) });
       return;
     }
     throw error;
@@ -74,14 +71,14 @@ export async function createCategory(req: Request, res: Response) {
 export async function updateCategory(req: Request, res: Response) {
   const parsed = categorySchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -90,7 +87,7 @@ export async function updateCategory(req: Request, res: Response) {
     select: { id: true },
   });
   if (!existing) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -104,7 +101,7 @@ export async function updateCategory(req: Request, res: Response) {
     select: { id: true },
   });
   if (taken) {
-    res.status(400).json({ error: NAME_TAKEN });
+    res.status(400).json({ error: msg(req, NAME_TAKEN) });
     return;
   }
 
@@ -121,7 +118,7 @@ export async function updateCategory(req: Request, res: Response) {
     res.json(category);
   } catch (error) {
     if (isUniqueNameError(error)) {
-      res.status(400).json({ error: NAME_TAKEN });
+      res.status(400).json({ error: msg(req, NAME_TAKEN) });
       return;
     }
     throw error;
@@ -132,7 +129,7 @@ export async function deleteCategory(req: Request, res: Response) {
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -141,7 +138,7 @@ export async function deleteCategory(req: Request, res: Response) {
     select: { id: true },
   });
   if (!existing) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 

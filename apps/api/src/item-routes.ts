@@ -10,6 +10,7 @@ import {
   textContentSchema,
   updateItemSchema,
   type LinkPreview,
+  type MsgKey,
   VOICE_MAX_BYTES,
   voiceDurationSchema,
 } from "@revivenotes/shared";
@@ -19,6 +20,7 @@ import { prisma } from "./db.js";
 import { Prisma } from "./generated/prisma/client.js";
 import { fetchLinkPreview } from "./link-preview.js";
 import { deletePrivateObject, openPrivateObject, putPrivateObject } from "./object-store.js";
+import { issueMessage, msg } from "./request-locale.js";
 import { readSignedInUser } from "./require-user.js";
 import { getUserDayRange } from "./user-day.js";
 
@@ -26,20 +28,20 @@ const PAGE_SIZE = 30;
 // Seven times 24 hours. This is not the user's day, so day_start_time is not used.
 // A touch at exactly this age is still fresh. Only an earlier last_touched_at is stale.
 const STALE_MS = 7 * 24 * 60 * 60 * 1000;
-const NOT_FOUND = "مش موجود";
-const BAD_CURSOR = "المؤشر مش مفهوم";
-const BAD_CATEGORY = "التصنيف مش موجود";
-const BAD_TAG = "الوسم مش موجود";
-const CONTENT_LOCKED = "مش ممكن تعدل المحتوى ده";
-const VOICE_TOO_BIG = "التسجيل أكبر من 15 ميجا";
-const VOICE_EMPTY = "التسجيل فاضي";
-const VOICE_TYPE = "نوع التسجيل لازم يكون webm أو ogg";
-const VOICE_BAD = "التسجيل مش مظبوط";
-const IMAGE_TOO_BIG = "الصورة أكبر من 5 ميجا";
-const IMAGE_EMPTY = "الصورة فاضية";
-const IMAGE_TYPE = "نوع الصورة لازم يكون jpeg أو png أو webp أو gif";
-const IMAGE_BAD = "الصورة مش مظبوطة";
-const SERVER_ERROR = "حصل خطأ في السيرفر";
+const NOT_FOUND: MsgKey = "not_found";
+const BAD_CURSOR: MsgKey = "cursor_invalid";
+const BAD_CATEGORY: MsgKey = "category_missing";
+const BAD_TAG: MsgKey = "tag_missing";
+const CONTENT_LOCKED: MsgKey = "content_locked";
+const VOICE_TOO_BIG: MsgKey = "voice_too_big";
+const VOICE_EMPTY: MsgKey = "voice_empty";
+const VOICE_TYPE: MsgKey = "voice_type";
+const VOICE_BAD: MsgKey = "voice_bad";
+const IMAGE_TOO_BIG: MsgKey = "image_too_big";
+const IMAGE_EMPTY: MsgKey = "image_empty";
+const IMAGE_TYPE: MsgKey = "image_type";
+const IMAGE_BAD: MsgKey = "image_bad";
+const SERVER_ERROR: MsgKey = "server_error";
 
 const itemSelect = {
   id: true,
@@ -57,17 +59,16 @@ const itemSelect = {
   },
 } as const;
 
-function firstIssueMessage(issues: { message: string }[]): string {
-  return issues[0]?.message ?? "البيانات مش مظبوطة";
-}
-
-function readOptionalNote(value: unknown): { ok: true; note: string | null } | { ok: false; error: string } {
+function readOptionalNote(
+  req: Request,
+  value: unknown,
+): { ok: true; note: string | null } | { ok: false; error: string } {
   if (value === undefined) {
     return { ok: true, note: null };
   }
   const parsed = itemNoteSchema.safeParse(value);
   if (!parsed.success) {
-    return { ok: false, error: firstIssueMessage(parsed.error.issues) };
+    return { ok: false, error: issueMessage(req, parsed.error.issues) };
   }
   return { ok: true, note: parsed.data };
 }
@@ -177,7 +178,7 @@ function toItem(row: StoredItem, user: { timezone: string; day_start_time: numbe
 export async function createItem(req: Request, res: Response) {
   const parsed = createItemSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
@@ -253,7 +254,7 @@ export async function listItems(req: Request, res: Response) {
     cursor: req.query.cursor,
   });
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
@@ -262,7 +263,7 @@ export async function listItems(req: Request, res: Response) {
   if (cursorValue) {
     cursor = readCursor(cursorValue);
     if (!cursor) {
-      res.status(400).json({ error: BAD_CURSOR });
+      res.status(400).json({ error: msg(req, BAD_CURSOR) });
       return;
     }
   }
@@ -290,7 +291,7 @@ export async function getItem(req: Request, res: Response) {
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -299,7 +300,7 @@ export async function getItem(req: Request, res: Response) {
     select: itemSelect,
   });
   if (!item) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -309,14 +310,14 @@ export async function getItem(req: Request, res: Response) {
 export async function updateItem(req: Request, res: Response) {
   const parsed = updateItemSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: firstIssueMessage(parsed.error.issues) });
+    res.status(400).json({ error: issueMessage(req, parsed.error.issues) });
     return;
   }
 
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -325,7 +326,7 @@ export async function updateItem(req: Request, res: Response) {
     select: itemSelect,
   });
   if (!item) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -333,13 +334,13 @@ export async function updateItem(req: Request, res: Response) {
   let contentChanged = false;
   if (parsed.data.content !== undefined) {
     if (item.type === "voice" || item.type === "image") {
-      res.status(400).json({ error: CONTENT_LOCKED });
+      res.status(400).json({ error: msg(req, CONTENT_LOCKED) });
       return;
     }
     if (item.type === "text") {
       const text = textContentSchema.safeParse(parsed.data.content);
       if (!text.success) {
-        res.status(400).json({ error: firstIssueMessage(text.error.issues) });
+        res.status(400).json({ error: issueMessage(req, text.error.issues) });
         return;
       }
       nextContent = text.data;
@@ -347,7 +348,7 @@ export async function updateItem(req: Request, res: Response) {
     if (item.type === "link") {
       const link = linkContentSchema.safeParse(parsed.data.content);
       if (!link.success) {
-        res.status(400).json({ error: firstIssueMessage(link.error.issues) });
+        res.status(400).json({ error: issueMessage(req, link.error.issues) });
         return;
       }
       nextContent = link.data;
@@ -367,7 +368,7 @@ export async function updateItem(req: Request, res: Response) {
         select: { id: true },
       });
       if (!category) {
-        res.status(400).json({ error: BAD_CATEGORY });
+        res.status(400).json({ error: msg(req, BAD_CATEGORY) });
         return;
       }
     }
@@ -387,7 +388,7 @@ export async function updateItem(req: Request, res: Response) {
           select: { id: true },
         });
         if (owned.length !== requested.length) {
-          res.status(400).json({ error: BAD_TAG });
+          res.status(400).json({ error: msg(req, BAD_TAG) });
           return;
         }
       }
@@ -497,7 +498,7 @@ export async function updateItem(req: Request, res: Response) {
     select: itemSelect,
   });
   if (!saved) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -508,7 +509,7 @@ export async function deleteItem(req: Request, res: Response) {
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -517,7 +518,7 @@ export async function deleteItem(req: Request, res: Response) {
     select: { id: true },
   });
   if (!existing) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -557,7 +558,7 @@ export async function reviveItem(req: Request, res: Response) {
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -566,7 +567,7 @@ export async function reviveItem(req: Request, res: Response) {
     select: { id: true },
   });
   if (!item) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -647,17 +648,17 @@ const voiceUpload = multer({
 export function postVoiceItem(req: Request, res: Response) {
   voiceUpload(req, res, (error: unknown) => {
     if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
-      res.status(400).json({ error: VOICE_TOO_BIG });
+      res.status(400).json({ error: msg(req, VOICE_TOO_BIG) });
       return;
     }
     if (error) {
-      res.status(400).json({ error: VOICE_BAD });
+      res.status(400).json({ error: msg(req, VOICE_BAD) });
       return;
     }
     void createVoiceItem(req, res).catch((failure: unknown) => {
       console.error(failure);
       if (!res.headersSent) {
-        res.status(500).json({ error: SERVER_ERROR });
+        res.status(500).json({ error: msg(req, SERVER_ERROR) });
       }
     });
   });
@@ -666,28 +667,28 @@ export function postVoiceItem(req: Request, res: Response) {
 async function createVoiceItem(req: Request, res: Response) {
   const file = readVoiceFile(req);
   if (!file || file.size === 0 || file.buffer.length === 0) {
-    res.status(400).json({ error: VOICE_EMPTY });
+    res.status(400).json({ error: msg(req, VOICE_EMPTY) });
     return;
   }
   // Reject the whole clip. Do not keep a 15 MB piece of a larger upload.
   if (file.size > VOICE_MAX_BYTES || file.buffer.length > VOICE_MAX_BYTES) {
-    res.status(400).json({ error: VOICE_TOO_BIG });
+    res.status(400).json({ error: msg(req, VOICE_TOO_BIG) });
     return;
   }
 
   const kind = voiceKind(file.mimetype);
   if (!kind) {
-    res.status(400).json({ error: VOICE_TYPE });
+    res.status(400).json({ error: msg(req, VOICE_TYPE) });
     return;
   }
 
   const duration = voiceDurationSchema.safeParse(req.body.duration_seconds);
   if (!duration.success) {
-    res.status(400).json({ error: firstIssueMessage(duration.error.issues) });
+    res.status(400).json({ error: issueMessage(req, duration.error.issues) });
     return;
   }
 
-  const noteInput = readOptionalNote(req.body.note);
+  const noteInput = readOptionalNote(req, req.body.note);
   if (!noteInput.ok) {
     res.status(400).json({ error: noteInput.error });
     return;
@@ -717,7 +718,7 @@ async function createVoiceItem(req: Request, res: Response) {
     await putPrivateObject(key, file.buffer, kind.contentType);
   } catch {
     await prisma.item.delete({ where: { id } }).catch(() => undefined);
-    res.status(500).json({ error: SERVER_ERROR });
+    res.status(500).json({ error: msg(req, SERVER_ERROR) });
     return;
   }
 
@@ -726,7 +727,7 @@ async function createVoiceItem(req: Request, res: Response) {
     select: itemSelect,
   });
   if (!saved) {
-    res.status(500).json({ error: SERVER_ERROR });
+    res.status(500).json({ error: msg(req, SERVER_ERROR) });
     return;
   }
 
@@ -785,17 +786,17 @@ const imageUpload = multer({
 export function postImageItem(req: Request, res: Response) {
   imageUpload(req, res, (error: unknown) => {
     if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
-      res.status(400).json({ error: IMAGE_TOO_BIG });
+      res.status(400).json({ error: msg(req, IMAGE_TOO_BIG) });
       return;
     }
     if (error) {
-      res.status(400).json({ error: IMAGE_BAD });
+      res.status(400).json({ error: msg(req, IMAGE_BAD) });
       return;
     }
     void createImageItem(req, res).catch((failure: unknown) => {
       console.error(failure);
       if (!res.headersSent) {
-        res.status(500).json({ error: SERVER_ERROR });
+        res.status(500).json({ error: msg(req, SERVER_ERROR) });
       }
     });
   });
@@ -804,22 +805,22 @@ export function postImageItem(req: Request, res: Response) {
 async function createImageItem(req: Request, res: Response) {
   const file = readImageFile(req);
   if (!file || file.size === 0 || file.buffer.length === 0) {
-    res.status(400).json({ error: IMAGE_EMPTY });
+    res.status(400).json({ error: msg(req, IMAGE_EMPTY) });
     return;
   }
   // Reject the whole file. Do not keep a 5 MB piece of a larger upload.
   if (file.size > IMAGE_MAX_BYTES || file.buffer.length > IMAGE_MAX_BYTES) {
-    res.status(400).json({ error: IMAGE_TOO_BIG });
+    res.status(400).json({ error: msg(req, IMAGE_TOO_BIG) });
     return;
   }
 
   const kind = imageKind(file.mimetype);
   if (!kind) {
-    res.status(400).json({ error: IMAGE_TYPE });
+    res.status(400).json({ error: msg(req, IMAGE_TYPE) });
     return;
   }
 
-  const noteInput = readOptionalNote(req.body.note);
+  const noteInput = readOptionalNote(req, req.body.note);
   if (!noteInput.ok) {
     res.status(400).json({ error: noteInput.error });
     return;
@@ -845,7 +846,7 @@ async function createImageItem(req: Request, res: Response) {
     });
   } catch (failure: unknown) {
     console.error(failure);
-    res.status(500).json({ error: SERVER_ERROR });
+    res.status(500).json({ error: msg(req, SERVER_ERROR) });
     return;
   }
 
@@ -853,7 +854,7 @@ async function createImageItem(req: Request, res: Response) {
     await putPrivateObject(key, file.buffer, kind.contentType);
   } catch {
     await removeRejectedImage(id, key);
-    res.status(500).json({ error: SERVER_ERROR });
+    res.status(500).json({ error: msg(req, SERVER_ERROR) });
     return;
   }
 
@@ -863,7 +864,7 @@ async function createImageItem(req: Request, res: Response) {
   });
   if (!saved) {
     await removeRejectedImage(id, key);
-    res.status(500).json({ error: SERVER_ERROR });
+    res.status(500).json({ error: msg(req, SERVER_ERROR) });
     return;
   }
 
@@ -886,7 +887,7 @@ export async function streamItemFile(req: Request, res: Response) {
   const user = readSignedInUser(res);
   const id = paramId(req);
   if (!id) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -896,21 +897,21 @@ export async function streamItemFile(req: Request, res: Response) {
     select: { type: true, content: true },
   });
   if (!item || (item.type !== "voice" && item.type !== "image")) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
   const contentType = contentTypeFromKey(item.content);
   if (!contentType) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
   if (item.type === "voice" && !contentType.startsWith("audio/")) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
   if (item.type === "image" && !contentType.startsWith("image/")) {
-    res.status(404).json({ error: NOT_FOUND });
+    res.status(404).json({ error: msg(req, NOT_FOUND) });
     return;
   }
 
@@ -918,7 +919,7 @@ export async function streamItemFile(req: Request, res: Response) {
   try {
     body = await openPrivateObject(item.content);
   } catch {
-    res.status(500).json({ error: SERVER_ERROR });
+    res.status(500).json({ error: msg(req, SERVER_ERROR) });
     return;
   }
 
@@ -926,7 +927,7 @@ export async function streamItemFile(req: Request, res: Response) {
   res.setHeader("Cache-Control", "private, no-store");
   body.on("error", () => {
     if (!res.headersSent) {
-      res.status(500).json({ error: SERVER_ERROR });
+      res.status(500).json({ error: msg(req, SERVER_ERROR) });
       return;
     }
     res.destroy();

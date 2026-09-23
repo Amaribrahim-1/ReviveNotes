@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
+import { translateIssue, useT } from "@/lib/use-t";
 import {
   alertClass,
   buttonClass,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/ui-classes";
 
 export function TagManager() {
+  const { t, locale } = useT();
   const queryClient = useQueryClient();
   const form = useForm<TagInput>({
     defaultValues: { name: "" },
@@ -49,13 +51,13 @@ export function TagManager() {
     setFormError(null);
     const parsed = tagSchema.safeParse(values);
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setFormError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بنضيف...");
+    const toastId = toast.loading(t("adding"));
     try {
       const response = await api("/tags", {
         method: "POST",
@@ -68,14 +70,14 @@ export function TagManager() {
         return;
       }
     } catch {
-      setFormError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setFormError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     form.reset({ name: "" });
     await refresh();
-    toast.success("اتضاف الوسم", { id: toastId });
+    toast.success(t("tag_added"), { id: toastId });
   }
 
   function startEdit(tag: Tag) {
@@ -92,13 +94,13 @@ export function TagManager() {
     setFormError(null);
     const parsed = tagSchema.safeParse(values);
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setFormError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بنحفظ...");
+    const toastId = toast.loading(t("saving"));
     try {
       const response = await api(`/tags/${editingId}`, {
         method: "PATCH",
@@ -111,20 +113,20 @@ export function TagManager() {
         return;
       }
     } catch {
-      setFormError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setFormError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     setEditingId(null);
     await refresh();
-    toast.success("اتحفظ الوسم", { id: toastId });
+    toast.success(t("tag_saved"), { id: toastId });
   }
 
   async function onDelete(id: string) {
     setDeleting(true);
     setFormError(null);
-    const toastId = toast.loading("بنحذف...");
+    const toastId = toast.loading(t("deleting"));
     try {
       const response = await api(`/tags/${id}`, { method: "DELETE" });
       if (!response.ok) {
@@ -134,8 +136,8 @@ export function TagManager() {
         return;
       }
     } catch {
-      setFormError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setFormError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     } finally {
       setDeleting(false);
@@ -146,21 +148,21 @@ export function TagManager() {
     }
     setConfirmId(null);
     await refresh();
-    toast.success("اتحذف الوسم", { id: toastId });
+    toast.success(t("tag_deleted"), { id: toastId });
   }
 
   return (
     <section className={`${surfacePanelClass} flex flex-col gap-4`}>
-      <h2 className="text-xl font-semibold tracking-tight">الوسوم</h2>
+      <h2 className="text-xl font-semibold tracking-tight">{t("tags")}</h2>
       <form className="flex flex-col gap-4" noValidate onSubmit={form.handleSubmit(onCreate)}>
         <div>
           <label className={labelClass} htmlFor="new-tag-name">
-            الاسم
+            {t("name")}
           </label>
           <input id="new-tag-name" type="text" autoComplete="off" className={fieldClass} {...form.register("name")} />
         </div>
         <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-          {form.formState.isSubmitting ? "بنضيف..." : "إضافة وسم"}
+          {form.formState.isSubmitting ? t("adding") : t("add_tag")}
         </button>
       </form>
 
@@ -170,9 +172,9 @@ export function TagManager() {
         </p>
       ) : null}
 
-      {tags.isPending ? <p className={mutedClass}>بنحمّل الوسوم...</p> : null}
+      {tags.isPending ? <p className={mutedClass}>{t("loading_tags")}</p> : null}
       {tags.isError ? <p role="alert">{tags.error.message}</p> : null}
-      {tags.data && tags.data.length === 0 ? <p className={mutedClass}>لسه مفيش وسوم.</p> : null}
+      {tags.data && tags.data.length === 0 ? <p className={mutedClass}>{t("no_tags_yet")}</p> : null}
 
       {tags.data && tags.data.length > 0 ? (
         <ul className="flex flex-col gap-3">
@@ -182,7 +184,7 @@ export function TagManager() {
                 <form className="flex flex-col gap-3" noValidate onSubmit={editForm.handleSubmit(onRename)}>
                   <div>
                     <label className={labelClass} htmlFor="edit-tag-name">
-                      الاسم
+                      {t("name")}
                     </label>
                     <input
                       id="edit-tag-name"
@@ -194,10 +196,10 @@ export function TagManager() {
                   </div>
                   <div className="flex gap-2">
                     <button type="submit" disabled={editForm.formState.isSubmitting} className={buttonClass}>
-                      {editForm.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
+                      {editForm.formState.isSubmitting ? t("saving") : t("save")}
                     </button>
                     <button type="button" onClick={() => setEditingId(null)} className={buttonSecondaryClass}>
-                      إلغاء
+                      {t("cancel")}
                     </button>
                   </div>
                 </form>
@@ -206,17 +208,17 @@ export function TagManager() {
                   <p>{tag.name}</p>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={() => startEdit(tag)} className={buttonSecondaryClass}>
-                      تعديل
+                      {t("edit")}
                     </button>
                     {confirmId === tag.id ? null : (
                       <button type="button" onClick={() => setConfirmId(tag.id)} className={buttonSecondaryClass}>
-                        حذف
+                        {t("delete")}
                       </button>
                     )}
                   </div>
                   {confirmId === tag.id ? (
                     <div className="flex flex-col gap-2">
-                      <p>حذف الوسم ده؟ العناصر هتفضل.</p>
+                      <p>{t("delete_tag_confirm")}</p>
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -224,10 +226,10 @@ export function TagManager() {
                           disabled={deleting}
                           className={buttonClass}
                         >
-                          {deleting ? "بنحذف..." : "تأكيد الحذف"}
+                          {deleting ? t("deleting") : t("confirm_delete")}
                         </button>
                         <button type="button" onClick={() => setConfirmId(null)} className={buttonSecondaryClass}>
-                          إلغاء
+                          {t("cancel")}
                         </button>
                       </div>
                     </div>

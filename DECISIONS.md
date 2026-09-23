@@ -135,3 +135,7 @@ Save and delete feedback uses `sonner` toasts: loading while the request runs, t
 ## Web visual theme
 
 The signed-in app uses a paper-alive light look (soft sage ground, charcoal ink, teal accent) and a night-paper dark look. Both share the same CSS variables on `:root` and `.dark`. A class-based `dark` variant drives Tailwind. Preference lives in `localStorage` under `rn-theme`, owned by a small Zustand store, because theme is UI state only. A tiny script in the document head applies the class before paint so the first frame does not flash. `next-themes` was rejected: the app already has Zustand, and one storage key is enough. Forced dark-only was rejected so the sticky-note feel stays the default.
+
+## UI language (Arabic + English)
+
+The UI defaults to Arabic (`rtl`). English is available from a toggle next to the theme button. Preference lives in `localStorage` under `rn-locale`, owned by a small Zustand store like theme. A tiny head script sets `lang` and `dir` before paint. `next-intl` and URL-based locales were rejected: the app only needs a client preference, not routed locales. Zod schemas store stable message keys; `packages/shared` holds Arabic and plain English strings for those keys and for API errors. The API reads `Accept-Language` and translates before responding. The web client sends that header from the saved locale. English copy stays short and simple on purpose.

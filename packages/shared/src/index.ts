@@ -1,5 +1,14 @@
 export const APP_NAME = "ReviveNotes";
 
+export {
+  DEFAULT_LOCALE,
+  isMsgKey,
+  MSG,
+  parseLocale,
+  tMsg,
+  zodErrorMessage,
+} from "./messages.js";
+export type { Locale, MsgKey } from "./messages.js";
 export { loginSchema, registerSchema } from "./auth.js";
 export type { LoginInput, PublicUser, RegisterInput } from "./auth.js";
 export { pushSubscriptionSchema } from "./push.js";

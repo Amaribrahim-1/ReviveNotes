@@ -9,6 +9,7 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
 import { alertClass, buttonSecondaryClass, mutedClass } from "@/lib/ui-classes";
+import { useT } from "@/lib/use-t";
 import ItemCard from "./ItemCard";
 
 type ItemListProps = {
@@ -20,6 +21,7 @@ type ItemListProps = {
 };
 
 export default function ItemList({ status, type, categoryId, tagIds, emptyText }: ItemListProps) {
+  const { t, locale } = useT();
   const tags = [...(tagIds ?? [])].sort();
   const activeTags = tags.length > 0 ? tags : undefined;
 
@@ -60,13 +62,13 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
   });
 
   if (items.isPending) {
-    return <p className={mutedClass}>بنحمّل الملاحظات...</p>;
+    return <p className={mutedClass}>{t("loading_items")}</p>;
   }
 
   if (items.isError) {
     return (
       <p className={alertClass} role="alert">
-        {items.error instanceof Error ? items.error.message : "حصل خطأ. حاول تاني."}
+        {items.error instanceof Error ? items.error.message : t("generic_error")}
       </p>
     );
   }
@@ -85,7 +87,7 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
             return (
               <li key={item.id} className="flex flex-col gap-2">
                 {showDayLabel ? (
-                  <h2 className={`text-sm font-medium ${mutedClass}`}>{dayLabel(item.local_date)}</h2>
+                  <h2 className={`text-sm font-medium ${mutedClass}`}>{dayLabel(item.local_date, locale)}</h2>
                 ) : null}
                 <ItemCard item={item} />
               </li>
@@ -102,14 +104,14 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
           disabled={items.isFetchingNextPage}
           className={buttonSecondaryClass}
         >
-          {items.isFetchingNextPage ? "بنحمّل..." : "اعرض المزيد"}
+          {items.isFetchingNextPage ? t("loading") : t("show_more")}
         </button>
       ) : null}
     </div>
   );
 }
 
-function dayLabel(localDate: string): string {
+function dayLabel(localDate: string, locale: "ar" | "en"): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(localDate);
   if (!match) {
     return localDate;
@@ -118,7 +120,7 @@ function dayLabel(localDate: string): string {
   const month = Number(match[2]);
   const day = Number(match[3]);
   // local_date is already the user's calendar day. timeZone UTC prints that same year, month, and day.
-  return new Intl.DateTimeFormat("ar", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en" : "ar", {
     numberingSystem: "latn",
     day: "numeric",
     month: "long",

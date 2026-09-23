@@ -1,2 +1,2 @@
-export const NAME_TAKEN = "الاسم ده موجود عندك";
-export const NOT_FOUND = "مش موجود";
+export const NAME_TAKEN = "name_taken" as const;
+export const NOT_FOUND = "not_found" as const;

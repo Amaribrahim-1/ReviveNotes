@@ -8,6 +8,7 @@ import {
 } from "@revivenotes/shared";
 import { useForm } from "react-hook-form";
 import { buttonClass, fieldClass, labelClass } from "@/lib/ui-classes";
+import { translateIssue, useT } from "@/lib/use-t";
 
 type ContentFields = {
   content: string;
@@ -21,6 +22,7 @@ type ItemContentFormProps = {
 };
 
 export default function ItemContentForm({ item, pending, onSave, onInvalid }: ItemContentFormProps) {
+  const { t, locale } = useT();
   const form = useForm<ContentFields>({
     defaultValues: { content: item.content },
   });
@@ -29,7 +31,7 @@ export default function ItemContentForm({ item, pending, onSave, onInvalid }: It
   function onSubmit(values: ContentFields) {
     const parsed = isLink ? linkContentSchema.safeParse(values.content) : textContentSchema.safeParse(values.content);
     if (!parsed.success) {
-      onInvalid(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      onInvalid(translateIssue(locale, parsed.error.issues[0]?.message));
       return;
     }
     if (parsed.data === item.content) {
@@ -44,7 +46,7 @@ export default function ItemContentForm({ item, pending, onSave, onInvalid }: It
       {isLink ? (
         <div>
           <label className={labelClass} htmlFor="item-content">
-            الرابط
+            {t("link")}
           </label>
           <input
             id="item-content"
@@ -59,7 +61,7 @@ export default function ItemContentForm({ item, pending, onSave, onInvalid }: It
       ) : (
         <div>
           <label className={labelClass} htmlFor="item-content">
-            الملاحظة
+            {t("note")}
           </label>
           <textarea
             id="item-content"
@@ -71,7 +73,7 @@ export default function ItemContentForm({ item, pending, onSave, onInvalid }: It
         </div>
       )}
       <button type="submit" disabled={pending} className={buttonClass}>
-        {pending ? "بنحفظ..." : "حفظ"}
+        {pending ? t("saving") : t("save")}
       </button>
     </form>
   );

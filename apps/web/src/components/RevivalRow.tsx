@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import ItemCard from "@/components/items/ItemCard";
 import { api, apiError } from "@/lib/api";
 import { alertClass, buttonDangerClass, buttonSecondaryClass } from "@/lib/ui-classes";
+import { useT } from "@/lib/use-t";
 
 type RevivalRowProps = {
   item: Item;
@@ -24,6 +25,7 @@ function dropFromRevival(queryClient: QueryClient, itemId: string) {
 }
 
 export default function RevivalRow({ item }: RevivalRowProps) {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState<"revive" | "delete" | null>(null);
@@ -32,7 +34,7 @@ export default function RevivalRow({ item }: RevivalRowProps) {
   async function onRevive() {
     setError(null);
     setPending("revive");
-    const toastId = toast.loading("بنحيي...");
+    const toastId = toast.loading(t("reviving"));
     try {
       const response = await api(`/items/${item.id}/revive`, { method: "POST" });
       if (!response.ok) {
@@ -44,10 +46,10 @@ export default function RevivalRow({ item }: RevivalRowProps) {
       dropFromRevival(queryClient, item.id);
       await queryClient.invalidateQueries({ queryKey: ["items"] });
       await queryClient.invalidateQueries({ queryKey: ["item", item.id] });
-      toast.success("اتحييت", { id: toastId });
+      toast.success(t("revived"), { id: toastId });
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
     } finally {
       setPending(null);
     }
@@ -56,7 +58,7 @@ export default function RevivalRow({ item }: RevivalRowProps) {
   async function onDelete() {
     setError(null);
     setPending("delete");
-    const toastId = toast.loading("بنحذف...");
+    const toastId = toast.loading(t("deleting"));
     try {
       const response = await api(`/items/${item.id}`, { method: "DELETE" });
       if (response.status !== 204) {
@@ -69,10 +71,10 @@ export default function RevivalRow({ item }: RevivalRowProps) {
       queryClient.removeQueries({ queryKey: ["item", item.id] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
       await queryClient.invalidateQueries({ queryKey: ["progress"] });
-      toast.success("اتحذفت", { id: toastId });
+      toast.success(t("deleted"), { id: toastId });
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
     } finally {
       setPending(null);
     }
@@ -83,10 +85,10 @@ export default function RevivalRow({ item }: RevivalRowProps) {
       <ItemCard item={item} />
       {confirming ? (
         <div className="flex flex-col gap-3">
-          <p>الحذف نهائي والملاحظة مش هترجع.</p>
+          <p>{t("delete_forever_warn")}</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={buttonDangerClass} disabled={pending !== null} onClick={() => void onDelete()}>
-              {pending === "delete" ? "بنحذف..." : "تأكيد الحذف"}
+              {pending === "delete" ? t("deleting") : t("confirm_delete")}
             </button>
             <button
               type="button"
@@ -94,17 +96,17 @@ export default function RevivalRow({ item }: RevivalRowProps) {
               disabled={pending !== null}
               onClick={() => setConfirming(false)}
             >
-              إلغاء
+              {t("cancel")}
             </button>
           </div>
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           <button type="button" className={buttonSecondaryClass} disabled={pending !== null} onClick={() => void onRevive()}>
-            {pending === "revive" ? "بنحيي..." : "إحياء"}
+            {pending === "revive" ? t("reviving") : t("revive")}
           </button>
           <button type="button" className={buttonDangerClass} disabled={pending !== null} onClick={() => setConfirming(true)}>
-            حذف نهائي
+            {t("delete_forever")}
           </button>
         </div>
       )}

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
+import { translateIssue, useT } from "@/lib/use-t";
 import {
   alertClass,
   buttonClass,
@@ -18,9 +19,6 @@ import {
 const timeZones = Intl.supportedValuesOf("timeZone");
 const dayStartHours = Array.from({ length: 24 }, (_, hour) => hour);
 const extraTimeDefaults = ["09:00", "12:00", "18:00"];
-const bravePushHint =
-  "Brave بيقفل إشعارات المواقع. افتح brave://settings/privacy وشغّل Use Google services for push messaging، وبعدين اقفل المتصفح وافتحه واضغط الزر تاني.";
-
 type SettingsValues = {
   timezone: string;
   day_start_time: number;
@@ -29,6 +27,7 @@ type SettingsValues = {
 };
 
 export default function SettingsForm() {
+  const { t, locale } = useT();
   const queryClient = useQueryClient();
   const me = useQuery({
     queryKey: ["me"],
@@ -98,13 +97,13 @@ export default function SettingsForm() {
     setError(null);
     const parsed = updateSettingsSchema.safeParse(values);
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setError(message);
       toast.error(message);
       return;
     }
 
-    const toastId = toast.loading("بنحفظ...");
+    const toastId = toast.loading(t("saving"));
     try {
       const response = await api("/me", {
         method: "PATCH",
@@ -117,15 +116,15 @@ export default function SettingsForm() {
         return;
       }
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     }
 
     await queryClient.invalidateQueries({ queryKey: ["me"] });
     await queryClient.invalidateQueries({ queryKey: ["items"] });
     await queryClient.invalidateQueries({ queryKey: ["progress"] });
-    toast.success("اتحفظت الإعدادات", { id: toastId });
+    toast.success(t("settings_saved"), { id: toastId });
   }
 
   function setTime(index: number, value: string) {
@@ -153,18 +152,18 @@ export default function SettingsForm() {
     setPushError(null);
     setPushReady(false);
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-      const message = "المتصفح ده مش بيدعم الإشعارات";
+      const message = t("notifications_unsupported");
       setPushError(message);
       toast.error(message);
       return;
     }
 
     setPushWorking(true);
-    const toastId = toast.loading("بنفعّل الإشعارات...");
+    const toastId = toast.loading(t("enabling_notifications"));
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        const message = "المتصفح رفض الإشعارات";
+        const message = t("notifications_denied");
         setPushError(message);
         toast.error(message, { id: toastId });
         return;
@@ -184,7 +183,7 @@ export default function SettingsForm() {
       }
       const keyBody = (await keyResponse.json()) as { public_key?: string };
       if (!keyBody.public_key) {
-        const message = "مفتاح الإشعار ناقص";
+        const message = t("push_key_missing");
         setPushError(message);
         toast.error(message, { id: toastId });
         return;
@@ -196,7 +195,7 @@ export default function SettingsForm() {
       });
       const keys = subscription.toJSON().keys;
       if (!keys?.p256dh || !keys.auth) {
-        const message = "مش قادرين نسجل الإشعارات";
+        const message = t("notifications_save_fail");
         setPushError(message);
         toast.error(message, { id: toastId });
         return;
@@ -217,16 +216,16 @@ export default function SettingsForm() {
         return;
       }
       setPushReady(true);
-      toast.success("الإشعارات مسموحة", { id: toastId });
+      toast.success(t("notifications_allowed"), { id: toastId });
     } catch (error) {
       const detail = error instanceof Error ? error.message : "";
       if (detail.includes("push service")) {
-        const message = braveBrowser ? bravePushHint : "المتصفح مش قادر يوصل لخدمة الإشعارات.";
+        const message = braveBrowser ? t("brave_push_hint") : t("notifications_push_fail");
         setPushError(message);
         toast.error(message, { id: toastId });
         return;
       }
-      const message = "مش قادرين نفعّل الإشعارات";
+      const message = t("notifications_enable_fail");
       setPushError(message);
       toast.error(message, { id: toastId });
     } finally {
@@ -235,7 +234,7 @@ export default function SettingsForm() {
   }
 
   if (me.isPending || !me.data) {
-    return <p className={mutedClass}>بنحمّل الإعدادات...</p>;
+    return <p className={mutedClass}>{t("loading")}</p>;
   }
 
   const zones = timeZones.includes(me.data.timezone) ? timeZones : [me.data.timezone, ...timeZones];
@@ -250,7 +249,7 @@ export default function SettingsForm() {
       >
         <div>
           <label className={labelClass} htmlFor="settings-timezone">
-            المنطقة الزمنية
+            {t("timezone")}
           </label>
           <select id="settings-timezone" className={fieldClass} {...form.register("timezone")}>
             {zones.map((zone) => (
@@ -262,7 +261,7 @@ export default function SettingsForm() {
         </div>
         <div>
           <label className={labelClass} htmlFor="settings-day-start">
-            ساعة بداية اليوم
+            {t("day_start")}
           </label>
           <select
             id="settings-day-start"
@@ -277,14 +276,14 @@ export default function SettingsForm() {
             ))}
           </select>
           <p id="settings-day-start-hint" className="mt-1 text-sm text-rn-muted">
-            0 يعني منتصف الليل.
+            {t("day_start_hint")}
           </p>
         </div>
         <section className="flex flex-col gap-3 border-t border-rn-border pt-6" aria-labelledby="settings-reminders">
           <h2 id="settings-reminders" className="text-xl font-semibold">
-            التذكيرات
+            {t("reminders")}
           </h2>
-          <p className="text-sm text-rn-muted">هيوصلك عدد الملاحظات المفتوحة بس.</p>
+          <p className="text-sm text-rn-muted">{t("reminders_hint")}</p>
           <label className="flex items-center gap-2" htmlFor="settings-reminders-enabled">
             <input
               id="settings-reminders-enabled"
@@ -297,7 +296,7 @@ export default function SettingsForm() {
                 }
               }}
             />
-            تشغيل التذكير
+            {t("reminders_on")}
           </label>
           {remindersEnabled ? (
             <div className="flex flex-col gap-3">
@@ -305,7 +304,7 @@ export default function SettingsForm() {
                 <div key={index} className="flex items-end gap-2">
                   <div className="flex-1">
                     <label className={labelClass} htmlFor={`settings-reminder-time-${index}`}>
-                      الوقت {index + 1}
+                      {t("time_n")} {index + 1}
                     </label>
                     <input
                       id={`settings-reminder-time-${index}`}
@@ -323,26 +322,26 @@ export default function SettingsForm() {
                       type="button"
                       className={buttonClass}
                       onClick={() => removeTime(index)}
-                      aria-label={`إزالة الوقت ${index + 1}`}
+                      aria-label={`${t("remove_time")} ${index + 1}`}
                     >
-                      إزالة
+                      {t("delete")}
                     </button>
                   ) : null}
                 </div>
               ))}
               <button type="button" className={buttonClass} onClick={addTime} disabled={reminderTimes.length >= 3}>
-                إضافة وقت
+                {t("add_time")}
               </button>
-              {braveBrowser ? <p className="text-sm text-rn-muted">{bravePushHint}</p> : null}
+              {braveBrowser ? <p className="text-sm text-rn-muted">{t("brave_push_hint")}</p> : null}
               <button type="button" className={buttonClass} onClick={allowNotifications} disabled={pushWorking}>
-                {pushWorking ? "بنفعّل الإشعارات..." : "السماح بالإشعارات"}
+                {pushWorking ? t("enabling_notifications") : t("allow_notifications")}
               </button>
               {pushError ? (
                 <p className={alertClass} role="alert">
                   {pushError}
                 </p>
               ) : null}
-              {pushReady ? <p role="status">الإشعارات مسموحة.</p> : null}
+              {pushReady ? <p role="status">{t("notifications_allowed")}</p> : null}
             </div>
           ) : null}
         </section>
@@ -352,7 +351,7 @@ export default function SettingsForm() {
           </p>
         ) : null}
         <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-          {form.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
+          {form.formState.isSubmitting ? t("saving") : t("save")}
         </button>
       </form>
     </div>

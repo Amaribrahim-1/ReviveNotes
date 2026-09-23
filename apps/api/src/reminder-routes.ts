@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { Request, Response } from "express";
 import { prisma } from "./db.js";
 import { sendWebPush } from "./push-sender.js";
+import { msg } from "./request-locale.js";
 import { readLocalCalendar } from "./user-day.js";
 
 type StoredSubscription = {
@@ -13,7 +14,7 @@ type StoredSubscription = {
 
 export async function dispatchReminders(req: Request, res: Response) {
   if (!cronSecretMatches(req.header("x-cron-secret"))) {
-    res.status(401).json({ error: "السر مش صحيح" });
+    res.status(401).json({ error: msg(req, "cron_secret_invalid") });
     return;
   }
 

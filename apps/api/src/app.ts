@@ -22,6 +22,7 @@ import {
   updateItem,
 } from "./item-routes.js";
 import { getTodayProgress } from "./progress-routes.js";
+import { msg } from "./request-locale.js";
 import { requireUser } from "./require-user.js";
 import { createTag, deleteTag, listTags, updateTag } from "./tag-routes.js";
 
@@ -67,12 +68,12 @@ app.patch("/items/:id", requireUser, updateItem);
 app.post("/items/:id/revive", requireUser, reviveItem);
 app.delete("/items/:id", requireUser, deleteItem);
 
-app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
   console.error(error);
   if (res.headersSent) {
     return;
   }
-  res.status(500).json({ error: "حصل خطأ في السيرفر" });
+  res.status(500).json({ error: msg(req, "server_error") });
 });
 
 function allowWebOrigin(req: Request, res: Response, next: NextFunction) {
@@ -86,7 +87,7 @@ function allowWebOrigin(req: Request, res: Response, next: NextFunction) {
   }
 
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept-Language");
 
   if (req.method === "OPTIONS") {
     res.status(204).end();

@@ -6,8 +6,10 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import { alertClass, buttonClass, fieldClass, labelClass, mutedClass } from "@/lib/ui-classes";
+import { translateIssue, useT } from "@/lib/use-t";
 
 export default function ImageCapture() {
+  const { t, locale } = useT();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -18,19 +20,19 @@ export default function ImageCapture() {
   async function upload() {
     setError(null);
     if (!file) {
-      const message = "اختار صورة";
+      const message = t("pick_image");
       setError(message);
       toast.error(message);
       return;
     }
     if (file.size === 0) {
-      const message = "الصورة فاضية";
+      const message = t("image_empty");
       setError(message);
       toast.error(message);
       return;
     }
     if (file.size > IMAGE_MAX_BYTES) {
-      const message = "الصورة أكبر من 5 ميجا";
+      const message = t("image_too_big");
       setError(message);
       toast.error(message);
       return;
@@ -39,7 +41,7 @@ export default function ImageCapture() {
       const base = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
       const parsed = imageContentTypeSchema.safeParse(base);
       if (!parsed.success) {
-        const message = parsed.error.issues[0]?.message ?? "نوع الصورة لازم يكون jpeg أو png أو webp أو gif";
+        const message = translateIssue(locale, parsed.error.issues[0]?.message, "image_type");
         setError(message);
         toast.error(message);
         return;
@@ -52,7 +54,7 @@ export default function ImageCapture() {
       form.append("note", note);
     }
     setUploading(true);
-    const toastId = toast.loading("بنحفظ...");
+    const toastId = toast.loading(t("saving"));
     try {
       const response = await api("/items/image", {
         method: "POST",
@@ -65,8 +67,8 @@ export default function ImageCapture() {
         return;
       }
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     } finally {
       setUploading(false);
@@ -78,14 +80,14 @@ export default function ImageCapture() {
       inputRef.current.value = "";
     }
     await queryClient.invalidateQueries({ queryKey: ["items"] });
-    toast.success("اتحفظت", { id: toastId });
+    toast.success(t("saved"), { id: toastId });
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <label className={labelClass} htmlFor="capture-image">
-          الصورة
+          {t("type_image")}
         </label>
         <input
           ref={inputRef}
@@ -107,7 +109,7 @@ export default function ImageCapture() {
       ) : null}
       <div>
         <label className={labelClass} htmlFor="capture-image-note">
-          ملاحظة (اختياري)
+          {t("note_optional")}
         </label>
         <textarea
           id="capture-image-note"
@@ -132,7 +134,7 @@ export default function ImageCapture() {
         }}
         className={buttonClass}
       >
-        {uploading ? "بنحفظ..." : "حفظ"}
+        {uploading ? t("saving") : t("save")}
       </button>
     </div>
   );

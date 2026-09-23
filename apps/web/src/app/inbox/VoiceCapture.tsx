@@ -8,6 +8,7 @@ import { api, apiError } from "@/lib/api";
 import { alertClass, buttonClass, fieldClass, labelClass } from "@/lib/ui-classes";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
 import { useRecorder } from "./use-recorder";
+import { translateIssue, useT } from "@/lib/use-t";
 
 type RecorderMime = "audio/webm" | "audio/ogg";
 
@@ -25,6 +26,7 @@ function recorderMime(): RecorderMime | null {
 }
 
 export default function VoiceCapture() {
+  const { t, locale } = useT();
   const queryClient = useQueryClient();
   const recording = useRecorder((state) => state.recording);
   const elapsedSeconds = useRecorder((state) => state.elapsedSeconds);
@@ -82,7 +84,7 @@ export default function VoiceCapture() {
       form.append("note", note);
     }
     setUploading(true);
-    const toastId = toast.loading("بنحفظ...");
+    const toastId = toast.loading(t("saving"));
     try {
       const response = await api("/items/voice", {
         method: "POST",
@@ -95,8 +97,8 @@ export default function VoiceCapture() {
         return;
       }
     } catch {
-      setError("مش قادرين نوصل للسيرفر");
-      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
+      setError(t("offline"));
+      toast.error(t("offline"), { id: toastId });
       return;
     } finally {
       setUploading(false);
@@ -109,7 +111,7 @@ export default function VoiceCapture() {
       noteInputRef.current.value = "";
     }
     await queryClient.invalidateQueries({ queryKey: ["items"] });
-    toast.success("اتحفظت", { id: toastId });
+    toast.success(t("saved"), { id: toastId });
   }
 
   async function startRecording() {
@@ -119,7 +121,7 @@ export default function VoiceCapture() {
     setError(null);
     const mime = recorderMime();
     if (!mime) {
-      const message = "المتصفح مش بيدعم التسجيل";
+      const message = t("voice_unsupported");
       setError(message);
       toast.error(message);
       return;
@@ -129,7 +131,7 @@ export default function VoiceCapture() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      const message = "المتصفح منع الميكروفون";
+      const message = t("voice_mic_denied");
       setError(message);
       toast.error(message);
       return;
@@ -166,7 +168,7 @@ export default function VoiceCapture() {
     } catch {
       stream.getTracks().forEach((track) => track.stop());
       setRecording(false);
-      const message = "المتصفح مش بيدعم التسجيل";
+      const message = t("voice_unsupported");
       setError(message);
       toast.error(message);
       return;
@@ -186,19 +188,19 @@ export default function VoiceCapture() {
     }, 200);
   }
 
-  let buttonLabel = "سجّل";
+  let buttonLabel = t("capture_save");
   if (recording) {
-    buttonLabel = "إيقاف وحفظ";
+    buttonLabel = t("voice_stop_save");
   }
   if (uploading) {
-    buttonLabel = "بنحفظ...";
+    buttonLabel = t("saving");
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <label className={labelClass} htmlFor="capture-voice-note">
-          ملاحظة (اختياري)
+          {t("note_optional")}
         </label>
         <textarea
           ref={noteInputRef}
@@ -210,7 +212,7 @@ export default function VoiceCapture() {
         />
       </div>
       <p>
-        المدة <span dir="ltr">{formatVoiceDuration(elapsedSeconds)}</span>
+        {t("voice_duration")} <span dir="ltr">{formatVoiceDuration(elapsedSeconds)}</span>
       </p>
       {error ? (
         <p className={alertClass} role="alert">

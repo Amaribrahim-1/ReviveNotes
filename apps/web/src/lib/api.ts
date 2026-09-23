@@ -1,3 +1,6 @@
+import { tMsg } from "@revivenotes/shared";
+import { readStoredLocale } from "@/lib/locale-storage";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 let refreshInFlight: Promise<boolean> | null = null;
@@ -19,6 +22,9 @@ function refreshSession(): Promise<boolean> {
     refreshInFlight = fetch(`${apiBase()}/auth/refresh`, {
       method: "POST",
       credentials: "include",
+      headers: {
+        "Accept-Language": readStoredLocale(),
+      },
     })
       .then((response) => response.ok)
       .catch(() => false)
@@ -40,6 +46,9 @@ export async function api(
   // FormData sets its own multipart boundary. A JSON content type would drop the file.
   if (init.body !== undefined && !bodyIsForm && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
+  }
+  if (!headers.has("Accept-Language")) {
+    headers.set("Accept-Language", readStoredLocale());
   }
 
   // Cookies are httpOnly. The browser sends them only when credentials is include.
@@ -72,5 +81,5 @@ export async function apiError(response: Response): Promise<string> {
   if (typeof body === "object" && body !== null && "error" in body && typeof body.error === "string") {
     return body.error;
   }
-  return "حصل خطأ. حاول تاني.";
+  return tMsg(readStoredLocale(), "generic_error");
 }

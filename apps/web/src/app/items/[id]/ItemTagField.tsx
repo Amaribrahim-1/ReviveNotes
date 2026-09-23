@@ -2,6 +2,7 @@ import type { Item, Tag, UpdateItemInput } from "@revivenotes/shared";
 import { useQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
 import { alertClass, labelClass, mutedClass } from "@/lib/ui-classes";
+import { translateIssue, useT } from "@/lib/use-t";
 
 type ItemTagFieldProps = {
   item: Item;
@@ -10,6 +11,7 @@ type ItemTagFieldProps = {
 };
 
 export default function ItemTagField({ item, pending, onSave }: ItemTagFieldProps) {
+  const { t, locale } = useT();
   const tags = useQuery({
     queryKey: ["tags"],
     retry: false,
@@ -30,14 +32,14 @@ export default function ItemTagField({ item, pending, onSave }: ItemTagFieldProp
 
   return (
     <fieldset className="flex flex-col gap-1" disabled={pending}>
-      <legend className={labelClass}>الوسوم</legend>
-      {tags.isPending ? <p className={mutedClass}>بنحمّل الوسوم...</p> : null}
+      <legend className={labelClass}>{t("tag_legend")}</legend>
+      {tags.isPending ? <p className={mutedClass}>{t("loading_tags")}</p> : null}
       {tags.isError ? (
         <p className={alertClass} role="alert">
-          {tags.error instanceof Error ? tags.error.message : "حصل خطأ. حاول تاني."}
+          {tags.error instanceof Error ? tags.error.message : t("generic_error")}
         </p>
       ) : null}
-      {tags.data && tags.data.length === 0 ? <p className={mutedClass}>لسه مفيش وسوم.</p> : null}
+      {tags.data && tags.data.length === 0 ? <p className={mutedClass}>{t("no_tags_yet")}</p> : null}
       {tags.data?.map((tag) => (
         <label key={tag.id} className="flex items-center gap-2 py-1">
           <input

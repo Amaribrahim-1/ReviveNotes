@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import ThemeToggle from "@/components/ThemeToggle";
+import HeaderToggles from "@/components/HeaderToggles";
+import { readStoredLocale } from "@/lib/locale-storage";
 import { saveSharedUrl, type SharedUrlResult } from "@/lib/pending-share";
 import { alertClass, authPageClass, buttonClass, linkClass, mutedClass, titleClass } from "@/lib/ui-classes";
+import { tUi } from "@/lib/ui-copy";
+import { useT } from "@/lib/use-t";
 
 type ShareView = "working" | "ignored" | "invalid" | "error";
 
@@ -15,6 +18,7 @@ async function openSharedLink(): Promise<SharedUrlResult> {
 }
 
 export default function SharePage() {
+  const { t } = useT();
   const [view, setView] = useState<ShareView>("working");
 
   useEffect(() => {
@@ -24,39 +28,37 @@ export default function SharePage() {
   return (
     <main className={authPageClass}>
       <div className="flex items-start justify-between gap-3">
-        <h1 className={titleClass}>مشاركة رابط</h1>
-        <ThemeToggle />
+        <h1 className={titleClass}>{t("share_title")}</h1>
+        <HeaderToggles />
       </div>
       {view === "working" ? (
         <p aria-live="polite" className={mutedClass}>
-          بنحفظ الرابط...
+          {t("share_saving")}
         </p>
       ) : null}
-      {view === "ignored" ? (
-        <p role="status">مفيش رابط. النص والصورة مش بيتسجلوا.</p>
-      ) : null}
+      {view === "ignored" ? <p role="status">{t("share_no_link")}</p> : null}
       {view === "invalid" ? (
         <p role="alert" className={alertClass}>
-          الرابط لازم يبدأ بـ http أو https.
+          {t("share_bad_link")}
         </p>
       ) : null}
       {view === "error" ? (
         <>
           <p role="alert" className={alertClass}>
-            مش قدرنا نحفظ الرابط.
+            {t("share_failed")}
           </p>
           <button type="button" className={buttonClass} onClick={() => void runShare(setView)}>
-            حاول تاني
+            {t("try_again")}
           </button>
         </>
       ) : null}
       {view !== "working" ? (
         <p className="flex gap-4">
           <Link href="/" className={linkClass}>
-            الصفحة الرئيسية
+            {t("home_link")}
           </Link>
           <Link href="/inbox" className={linkClass}>
-            الوارد
+            {t("nav_inbox")}
           </Link>
         </p>
       ) : null}
@@ -65,25 +67,26 @@ export default function SharePage() {
 }
 
 async function runShare(setView: (view: ShareView) => void) {
+  const locale = readStoredLocale();
   setView("working");
-  const toastId = toast.loading("بنحفظ الرابط...");
+  const toastId = toast.loading(tUi(locale, "share_saving"));
   const result = await openSharedLink();
   if (result === "saved") {
-    toast.success("اتحفظ الرابط", { id: toastId });
+    toast.success(tUi(locale, "share_saved"), { id: toastId });
     window.location.assign("/inbox");
     return;
   }
   if (result === "needs-login") {
-    toast.success("هنحوّلك على الدخول عشان نحفظ الرابط", { id: toastId });
+    toast.success(tUi(locale, "share_need_login"), { id: toastId });
     window.location.assign("/login");
     return;
   }
   if (result === "ignored") {
-    toast.error("مفيش رابط. النص والصورة مش بيتسجلوا.", { id: toastId });
+    toast.error(tUi(locale, "share_no_link"), { id: toastId });
   } else if (result === "invalid") {
-    toast.error("الرابط لازم يبدأ بـ http أو https.", { id: toastId });
+    toast.error(tUi(locale, "share_bad_link"), { id: toastId });
   } else {
-    toast.error("مش قدرنا نحفظ الرابط.", { id: toastId });
+    toast.error(tUi(locale, "share_failed"), { id: toastId });
   }
   setView(result);
 }

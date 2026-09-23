@@ -13,7 +13,7 @@ This app solves that by giving a fast, frictionless capture flow (seconds, no fo
 - Multi-user web application.
 - Mobile-first responsive design; must work well as an installable PWA (web app manifest + service worker).
 - The service worker exists for installability and Web Push. Offline capture and offline reading are out of scope.
-- UI language: fully in Arabic (RTL layout). Use Western digits (`1 2 3`) inside that Arabic UI.
+- UI language: Arabic by default (RTL). English is available from a language toggle; English layout is LTR. Digits stay Western (`1 2 3`). English UI wording stays short and plain.
 - iOS limitations of the Web Share Target API and of Web Push are a known, accepted gap. Do not block MVP on iOS support.
 
 ## 3. Repository Structure (Monorepo)
