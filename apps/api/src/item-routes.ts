@@ -147,9 +147,52 @@ export async function createItem(req: Request, res: Response) {
   res.status(201).json(toItem(item, user));
 }
 
+function listWhere(
+  userId: string,
+  query: {
+    status?: StoredItem["status"];
+    type?: StoredItem["type"];
+    category_id?: string;
+    tag?: string[];
+  },
+  cursor: { createdAt: Date; id: string } | null,
+): Prisma.ItemWhereInput {
+  // Each of these is one AND condition. Tags are the exception: any listed tag matches.
+  const filters: Prisma.ItemWhereInput[] = [{ user_id: userId }];
+
+  if (query.status) {
+    filters.push({ status: query.status });
+  }
+  if (query.type) {
+    filters.push({ type: query.type });
+  }
+  if (query.category_id) {
+    filters.push({ category_id: query.category_id });
+  }
+  if (query.tag && query.tag.length > 0) {
+    filters.push({
+      item_tags: { some: { tag_id: { in: query.tag } } },
+    });
+  }
+  // The cursor OR stays in its own AND slot. It must not replace the tag match.
+  if (cursor) {
+    filters.push({
+      OR: [
+        { created_at: { lt: cursor.createdAt } },
+        { created_at: cursor.createdAt, id: { lt: cursor.id } },
+      ],
+    });
+  }
+
+  return { AND: filters };
+}
+
 export async function listItems(req: Request, res: Response) {
   const parsed = itemListQuerySchema.safeParse({
     status: req.query.status,
+    type: req.query.type,
+    category_id: req.query.category_id,
+    tag: req.query.tag,
     cursor: req.query.cursor,
   });
   if (!parsed.success) {
@@ -170,18 +213,7 @@ export async function listItems(req: Request, res: Response) {
   const user = readSignedInUser(res);
   // Read one extra row so we know if another page exists. The body still has 30.
   const rows = await prisma.item.findMany({
-    where: {
-      user_id: user.id,
-      ...(parsed.data.status ? { status: parsed.data.status } : {}),
-      ...(cursor
-        ? {
-            OR: [
-              { created_at: { lt: cursor.createdAt } },
-              { created_at: cursor.createdAt, id: { lt: cursor.id } },
-            ],
-          }
-        : {}),
-    },
+    where: listWhere(user.id, parsed.data, cursor),
     orderBy: [{ created_at: "desc" }, { id: "desc" }],
     take: PAGE_SIZE + 1,
     select: itemSelect,

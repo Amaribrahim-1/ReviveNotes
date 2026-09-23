@@ -4,8 +4,10 @@ export const TEXT_MAX_LENGTH = 10000;
 export const LINK_MAX_LENGTH = 2000;
 
 export const ITEM_STATUSES = ["inbox", "active", "done", "archived"] as const;
+export const ITEM_TYPES = ["link", "text", "voice", "image"] as const;
 
 export type ItemStatus = (typeof ITEM_STATUSES)[number];
+export type ItemType = (typeof ITEM_TYPES)[number];
 
 export const textContentSchema = z
   .string({ error: "اكتب الملاحظة" })
@@ -34,10 +36,39 @@ export const createItemSchema = z.discriminatedUnion("type", [textItemSchema, li
   error: "اختار نص أو رابط",
 });
 
-export const itemListQuerySchema = z.object({
-  status: z.enum(ITEM_STATUSES, { error: "الحالة مش معروفة" }).optional(),
-  cursor: z.string({ error: "المؤشر مش مفهوم" }).trim().optional(),
+const tagIdSchema = z
+  .string({ error: "الوسم مش موجود" })
+  .trim()
+  .min(1, { error: "الوسم مش موجود" });
+
+// One `tag` value arrives as a string. Repeated `tag` values arrive as an array.
+// Missing `tag` stays missing, so the list does not filter by tags.
+const tagQuerySchema = z.union([tagIdSchema, z.array(tagIdSchema)], {
+  error: "الوسم مش موجود",
 });
+
+export const itemListQuerySchema = z
+  .object({
+    status: z.enum(ITEM_STATUSES, { error: "الحالة مش معروفة" }).optional(),
+    type: z.enum(ITEM_TYPES, { error: "النوع مش معروف" }).optional(),
+    category_id: z
+      .string({ error: "التصنيف مش موجود" })
+      .trim()
+      .min(1, { error: "التصنيف مش موجود" })
+      .optional(),
+    tag: tagQuerySchema.optional(),
+    cursor: z.string({ error: "المؤشر مش مفهوم" }).trim().optional(),
+  })
+  .transform((query) => {
+    const tag = query.tag;
+    return {
+      status: query.status,
+      type: query.type,
+      category_id: query.category_id,
+      cursor: query.cursor,
+      tag: tag === undefined ? undefined : Array.isArray(tag) ? tag : [tag],
+    };
+  });
 
 // Every field is optional. tag_ids, when sent, is the full set for that item.
 export const updateItemSchema = z.object({
@@ -67,7 +98,7 @@ export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
 export type Item = {
   id: string;
-  type: "link" | "text" | "voice" | "image";
+  type: ItemType;
   content: string;
   status: ItemStatus;
   category_id: string | null;

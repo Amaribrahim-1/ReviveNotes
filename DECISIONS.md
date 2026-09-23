@@ -53,3 +53,11 @@ The database keeps the original UTC instant. The list computes `local_date` when
 Entering `done` writes one `done` ClearEvent. A second save that is already `done` does not write another. Leaving `done` deletes that item's `done` events whose `created_at` falls in the current user-day from `getUserDayRange`. Older `done` events stay. Comparing UTC calendar dates was rejected, because Cairo midnight is not UTC midnight. Archive writes no event. Permanent delete writes a `deleted` event first, then deletes the item. Postgres sets that event's `item_id` to null, and the event stays.
 
 Editing a link URL clears `link_preview`, because the old preview described the old URL. Voice and image `content` is a private object key, so this patch refuses to replace it. A free-text rewrite of that key was rejected.
+
+## All-items filters
+
+`GET /items` stays the only list. Optional `category_id`, `status`, and `type` are one value each and combine with AND. Repeated `tag` matches an item that has any of those tags. Omitting `tag` does not filter tags. Omitting `status` returns every status.
+
+A second list route was rejected. The cursor stays `created_at|id` inside that same filtered query, so the next page does not walk outside the filters. A category id that belongs to someone else matches no rows for the caller, because every row is also limited to `user_id`.
+
+The all-items screen keeps the chosen filters in Zustand. TanStack Query keeps the item pages. The item array is not copied into Zustand.

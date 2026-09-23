@@ -14,6 +14,7 @@ type SignedInShellProps = {
 
 const links = [
   { href: "/inbox", label: "الوارد" },
+  { href: "/items", label: "كل الملاحظات" },
   { href: "/categories", label: "التصنيفات والوسوم" },
   { href: "/settings", label: "الإعدادات" },
 ];
@@ -74,7 +75,7 @@ export function SignedInShell({ children }: SignedInShellProps) {
             خروج
           </button>
         </div>
-        <nav className="flex gap-4" aria-label="التنقل">
+        <nav className="flex flex-wrap gap-4" aria-label="التنقل">
           {links.map((link) => (
             <Link
               key={link.href}

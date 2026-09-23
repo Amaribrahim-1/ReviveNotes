@@ -7,6 +7,7 @@ export type { UpdateSettingsInput } from "./settings.js";
 export {
   createItemSchema,
   ITEM_STATUSES,
+  ITEM_TYPES,
   itemListQuerySchema,
   linkContentSchema,
   LINK_MAX_LENGTH,
@@ -14,6 +15,14 @@ export {
   TEXT_MAX_LENGTH,
   updateItemSchema,
 } from "./items.js";
-export type { CreateItemInput, Item, ItemListQuery, ItemPage, ItemStatus, UpdateItemInput } from "./items.js";
+export type {
+  CreateItemInput,
+  Item,
+  ItemListQuery,
+  ItemPage,
+  ItemStatus,
+  ItemType,
+  UpdateItemInput,
+} from "./items.js";
 export { CATEGORY_COLORS, categorySchema, tagSchema } from "./labels.js";
 export type { Category, CategoryColor, CategoryInput, Tag, TagInput } from "./labels.js";

@@ -1,6 +1,11 @@
 "use client";
 
-import { itemListQuerySchema, type ItemPage } from "@revivenotes/shared";
+import {
+  itemListQuerySchema,
+  type ItemPage,
+  type ItemStatus,
+  type ItemType,
+} from "@revivenotes/shared";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
 import ItemCard from "./ItemCard";
@@ -8,18 +13,41 @@ import ItemCard from "./ItemCard";
 const buttonClass =
   "rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
 
-export default function ItemList() {
+type ItemListProps = {
+  status?: ItemStatus;
+  type?: ItemType;
+  categoryId?: string;
+  tagIds?: string[];
+  emptyText: string;
+};
+
+export default function ItemList({ status, type, categoryId, tagIds, emptyText }: ItemListProps) {
+  const tags = [...(tagIds ?? [])].sort();
+  const activeTags = tags.length > 0 ? tags : undefined;
+
   const items = useInfiniteQuery({
-    queryKey: ["items", "inbox"],
+    queryKey: ["items", status ?? null, type ?? null, categoryId ?? null, activeTags ?? null],
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }): Promise<ItemPage> => {
       const parsed = itemListQuerySchema.parse({
-        status: "inbox",
+        status,
+        type,
+        category_id: categoryId,
+        tag: activeTags,
         cursor: pageParam ?? undefined,
       });
       const params = new URLSearchParams();
       if (parsed.status) {
         params.set("status", parsed.status);
+      }
+      if (parsed.type) {
+        params.set("type", parsed.type);
+      }
+      if (parsed.category_id) {
+        params.set("category_id", parsed.category_id);
+      }
+      for (const tagId of parsed.tag ?? []) {
+        params.append("tag", tagId);
       }
       if (parsed.cursor) {
         params.set("cursor", parsed.cursor);
@@ -50,7 +78,7 @@ export default function ItemList() {
   return (
     <div className="flex flex-col gap-4">
       {rows.length === 0 ? (
-        <p>تقدر تسجّل الملاحظة من غير تصنيف.</p>
+        <p>{emptyText}</p>
       ) : (
         <ul className="flex list-none flex-col gap-3 p-0">
           {rows.map((item, index) => {
