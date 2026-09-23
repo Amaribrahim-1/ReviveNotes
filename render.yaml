@@ -1,0 +1,39 @@
+# ReviveNotes API on Render free tier.
+# Web stays on Vercel. Do not put the Express API on Vercel serverless.
+services:
+  - type: web
+    name: revivenotes-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: corepack enable && corepack pnpm install && corepack pnpm --filter @revivenotes/shared build && corepack pnpm --filter @revivenotes/api build
+    preDeployCommand: corepack pnpm --filter @revivenotes/api exec prisma migrate deploy
+    startCommand: corepack pnpm --filter @revivenotes/api start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/shared/**
+        - pnpm-lock.yaml
+        - package.json
+        - pnpm-workspace.yaml
+        - render.yaml
+    envVars:
+      - key: NODE_VERSION
+        value: "22.12.0"
+      - key: WEB_ORIGIN
+        value: https://revivenotes.vercel.app
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: CRON_SECRET
+        sync: false
