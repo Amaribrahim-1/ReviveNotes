@@ -1,8 +1,9 @@
 "use client";
 
-import { IMAGE_CONTENT_TYPES, IMAGE_MAX_BYTES, imageContentTypeSchema } from "@revivenotes/shared";
+import { IMAGE_CONTENT_TYPES, IMAGE_MAX_BYTES, imageContentTypeSchema, TEXT_MAX_LENGTH } from "@revivenotes/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 
 const fieldClass =
@@ -14,56 +15,74 @@ export default function ImageCapture() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [note, setNote] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function upload() {
     setError(null);
     if (!file) {
-      setError("اختار صورة");
+      const message = "اختار صورة";
+      setError(message);
+      toast.error(message);
       return;
     }
     if (file.size === 0) {
-      setError("الصورة فاضية");
+      const message = "الصورة فاضية";
+      setError(message);
+      toast.error(message);
       return;
     }
     if (file.size > IMAGE_MAX_BYTES) {
-      setError("الصورة أكبر من 5 ميجا");
+      const message = "الصورة أكبر من 5 ميجا";
+      setError(message);
+      toast.error(message);
       return;
     }
     if (file.type) {
       const base = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
       const parsed = imageContentTypeSchema.safeParse(base);
       if (!parsed.success) {
-        setError(parsed.error.issues[0]?.message ?? "نوع الصورة لازم يكون jpeg أو png أو webp أو gif");
+        const message = parsed.error.issues[0]?.message ?? "نوع الصورة لازم يكون jpeg أو png أو webp أو gif";
+        setError(message);
+        toast.error(message);
         return;
       }
     }
 
     const form = new FormData();
     form.append("image", file);
+    if (note.trim() !== "") {
+      form.append("note", note);
+    }
     setUploading(true);
+    const toastId = toast.loading("بنحفظ...");
     try {
       const response = await api("/items/image", {
         method: "POST",
         body: form,
       });
       if (!response.ok) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     } finally {
       setUploading(false);
     }
 
     setFile(null);
+    setNote("");
     if (inputRef.current) {
       inputRef.current.value = "";
     }
     await queryClient.invalidateQueries({ queryKey: ["items"] });
+    toast.success("اتحفظت", { id: toastId });
   }
 
   return (
@@ -90,6 +109,20 @@ export default function ImageCapture() {
           {file.name}
         </p>
       ) : null}
+      <div>
+        <label className="mb-1 block text-sm font-medium" htmlFor="capture-image-note">
+          ملاحظة (اختياري)
+        </label>
+        <textarea
+          id="capture-image-note"
+          rows={3}
+          maxLength={TEXT_MAX_LENGTH}
+          disabled={uploading}
+          className={fieldClass}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+        />
+      </div>
       {error ? (
         <p className="text-red-700" role="alert">
           {error}

@@ -89,6 +89,7 @@ model Item {
   user_id          String
   type             ItemType
   content          String
+  note             String?
   link_preview     Json?
   category_id      String?
   status           ItemStatus @default(inbox)

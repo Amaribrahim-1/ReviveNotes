@@ -1,12 +1,15 @@
 "use client";
 
-import { VOICE_MAX_SECONDS } from "@revivenotes/shared";
+import { TEXT_MAX_LENGTH, VOICE_MAX_SECONDS } from "@revivenotes/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
 import { useRecorder } from "./use-recorder";
 
+const fieldClass =
+  "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
 const buttonClass =
   "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
 
@@ -38,6 +41,7 @@ export default function VoiceCapture() {
   const elapsedRef = useRef(0);
   const stoppingRef = useRef(false);
   const cancelRef = useRef(false);
+  const noteInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     // Dev mode runs this cleanup once on startup. The next run must be allowed to record.
@@ -77,18 +81,26 @@ export default function VoiceCapture() {
     const form = new FormData();
     form.append("audio", new File([blob], `clip.${extension}`, { type: mime }));
     form.append("duration_seconds", String(elapsedRef.current));
+    const note = noteInputRef.current?.value ?? "";
+    if (note.trim() !== "") {
+      form.append("note", note);
+    }
     setUploading(true);
+    const toastId = toast.loading("بنحفظ...");
     try {
       const response = await api("/items/voice", {
         method: "POST",
         body: form,
       });
       if (!response.ok) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     } finally {
       setUploading(false);
@@ -97,7 +109,11 @@ export default function VoiceCapture() {
 
     elapsedRef.current = 0;
     setElapsedSeconds(0);
+    if (noteInputRef.current) {
+      noteInputRef.current.value = "";
+    }
     await queryClient.invalidateQueries({ queryKey: ["items"] });
+    toast.success("اتحفظت", { id: toastId });
   }
 
   async function startRecording() {
@@ -107,7 +123,9 @@ export default function VoiceCapture() {
     setError(null);
     const mime = recorderMime();
     if (!mime) {
-      setError("المتصفح مش بيدعم التسجيل");
+      const message = "المتصفح مش بيدعم التسجيل";
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -115,7 +133,9 @@ export default function VoiceCapture() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setError("المتصفح منع الميكروفون");
+      const message = "المتصفح منع الميكروفون";
+      setError(message);
+      toast.error(message);
       return;
     }
     if (cancelRef.current) {
@@ -150,7 +170,9 @@ export default function VoiceCapture() {
     } catch {
       stream.getTracks().forEach((track) => track.stop());
       setRecording(false);
-      setError("المتصفح مش بيدعم التسجيل");
+      const message = "المتصفح مش بيدعم التسجيل";
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -178,6 +200,19 @@ export default function VoiceCapture() {
 
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <label className="mb-1 block text-sm font-medium" htmlFor="capture-voice-note">
+          ملاحظة (اختياري)
+        </label>
+        <textarea
+          ref={noteInputRef}
+          id="capture-voice-note"
+          rows={3}
+          maxLength={TEXT_MAX_LENGTH}
+          disabled={uploading}
+          className={fieldClass}
+        />
+      </div>
       <p>
         المدة <span dir="ltr">{formatVoiceDuration(elapsedSeconds)}</span>
       </p>

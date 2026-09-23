@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
 import ItemImage from "@/components/items/ItemImage";
 import LinkPreviewCard from "@/components/items/LinkPreviewCard";
@@ -13,6 +14,7 @@ import { api, apiError } from "@/lib/api";
 import ItemCategoryField from "./ItemCategoryField";
 import ItemContentForm from "./ItemContentForm";
 import ItemDeleteButton from "./ItemDeleteButton";
+import ItemNoteForm from "./ItemNoteForm";
 import ItemStatusControls from "./ItemStatusControls";
 import ItemTagField from "./ItemTagField";
 
@@ -41,18 +43,23 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     setError(null);
     const parsed = updateItemSchema.safeParse(patch);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setError(message);
+      toast.error(message);
       return;
     }
 
     setPending(true);
+    const toastId = toast.loading("بنحفظ...");
     try {
       const response = await api(`/items/${itemId}`, {
         method: "PATCH",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
       const updated = (await response.json()) as Item;
@@ -61,8 +68,10 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
       if (parsed.data.status !== undefined) {
         await queryClient.invalidateQueries({ queryKey: ["progress"] });
       }
+      toast.success("اتحفظت", { id: toastId });
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
     } finally {
       setPending(false);
     }
@@ -71,18 +80,23 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   async function remove() {
     setError(null);
     setPending(true);
+    const toastId = toast.loading("بنحذف...");
     try {
       const response = await api(`/items/${itemId}`, { method: "DELETE" });
       if (response.status === 204) {
         queryClient.removeQueries({ queryKey: ["item", itemId] });
         await queryClient.invalidateQueries({ queryKey: ["items"] });
         await queryClient.invalidateQueries({ queryKey: ["progress"] });
+        toast.success("اتحذفت", { id: toastId });
         router.push("/inbox");
         return;
       }
-      setError(await apiError(response));
+      const message = await apiError(response);
+      setError(message);
+      toast.error(message, { id: toastId });
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
     } finally {
       setPending(false);
     }
@@ -117,7 +131,12 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
           onSave={(patch) => {
             void save(patch);
           }}
-          onInvalid={setError}
+          onInvalid={(message) => {
+            setError(message);
+            if (message) {
+              toast.error(message);
+            }
+          }}
         />
       </>
     );
@@ -136,9 +155,27 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     body = <p>النوع ده لسه مش متاح.</p>;
   }
 
+  const showNote = item.data.type === "link" || item.data.type === "image" || item.data.type === "voice";
+
   return (
     <article className="flex flex-col gap-6 rounded border border-amber-200 bg-amber-50 p-4">
       {body}
+      {showNote ? (
+        <ItemNoteForm
+          key={`${item.data.id}:${item.data.note ?? ""}`}
+          item={item.data}
+          pending={pending}
+          onSave={(patch) => {
+            void save(patch);
+          }}
+          onInvalid={(message) => {
+            setError(message);
+            if (message) {
+              toast.error(message);
+            }
+          }}
+        />
+      ) : null}
       {error ? (
         <p className="text-red-700" role="alert">
           {error}

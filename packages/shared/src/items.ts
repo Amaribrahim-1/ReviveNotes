@@ -27,6 +27,13 @@ export const linkContentSchema = z
   .max(LINK_MAX_LENGTH, { error: `الرابط أطول من ${LINK_MAX_LENGTH} حرف` })
   .pipe(z.url({ protocol: /^https?$/, error: "الرابط لازم يبدأ بـ http أو https" }));
 
+// Empty and whitespace become null. The words never go into content.
+export const itemNoteSchema = z
+  .string({ error: "الملاحظة مش مظبوطة" })
+  .trim()
+  .max(TEXT_MAX_LENGTH, { error: `الملاحظة أطول من ${TEXT_MAX_LENGTH} حرف` })
+  .transform((value) => (value.length === 0 ? null : value));
+
 const textItemSchema = z.object({
   type: z.literal("text"),
   content: textContentSchema,
@@ -35,6 +42,7 @@ const textItemSchema = z.object({
 const linkItemSchema = z.object({
   type: z.literal("link"),
   content: linkContentSchema,
+  note: itemNoteSchema.optional(),
 });
 
 export const createItemSchema = z.discriminatedUnion("type", [textItemSchema, linkItemSchema], {
@@ -107,6 +115,7 @@ export const updateItemSchema = z.object({
       error: "الوسوم مش مظبوطة",
     })
     .optional(),
+  note: z.union([itemNoteSchema, z.null()]).optional(),
 });
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;
@@ -127,6 +136,7 @@ export type Item = {
   id: string;
   type: ItemType;
   content: string;
+  note: string | null;
   status: ItemStatus;
   category_id: string | null;
   tag_ids: string[];

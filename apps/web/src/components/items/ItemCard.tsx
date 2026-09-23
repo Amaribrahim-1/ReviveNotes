@@ -18,6 +18,7 @@ export default function ItemCard({ item }: ItemCardProps) {
         className="block rounded border border-amber-200 bg-amber-50 p-4 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
       >
         <ItemImage itemId={item.id} size="thumb" />
+        {cardNote(item.note)}
       </Link>
     );
   }
@@ -28,10 +29,12 @@ export default function ItemCard({ item }: ItemCardProps) {
         <Link
           href={`/items/${item.id}`}
           aria-label={`فتح الملاحظة، المدة ${formatVoiceDuration(item.duration_seconds)}`}
-          dir="ltr"
-          className="text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          className="min-w-0 flex-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
         >
-          {formatVoiceDuration(item.duration_seconds)}
+          <p dir="ltr" className="text-lg">
+            {formatVoiceDuration(item.duration_seconds)}
+          </p>
+          {cardNote(item.note)}
         </Link>
         <VoicePlayButton itemId={item.id} />
       </article>
@@ -54,6 +57,7 @@ export default function ItemCard({ item }: ItemCardProps) {
           {cardText(item)}
         </p>
       )}
+      {item.type === "link" ? cardNote(item.note) : null}
     </Link>
   );
 }
@@ -67,4 +71,11 @@ function cardText(item: Item): string {
     default:
       return "النوع ده لسه مش متاح";
   }
+}
+
+function cardNote(note: string | null) {
+  if (!note) {
+    return null;
+  }
+  return <p className="mt-2 break-words">{note.split(/\r?\n/)[0] ?? note}</p>;
 }

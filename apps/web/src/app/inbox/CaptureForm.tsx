@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import ImageCapture from "./ImageCapture";
 import VoiceCapture from "./VoiceCapture";
@@ -25,12 +26,13 @@ type CaptureType = (typeof captureTypes)[number]["id"];
 
 type CaptureFields = {
   content: string;
+  note: string;
 };
 
 export default function CaptureForm() {
   const queryClient = useQueryClient();
   const form = useForm<CaptureFields>({
-    defaultValues: { content: "" },
+    defaultValues: { content: "", note: "" },
   });
   const [selectedType, setSelectedType] = useState<CaptureType>("text");
   const [error, setError] = useState<string | null>(null);
@@ -46,31 +48,43 @@ export default function CaptureForm() {
       return;
     }
     setError(null);
-    const parsed = createItemSchema.safeParse({
-      type: selectedType,
-      content: values.content,
-    });
+    const parsed = createItemSchema.safeParse(
+      selectedType === "link"
+        ? {
+            type: "link",
+            content: values.content,
+            ...(values.note.trim() === "" ? {} : { note: values.note }),
+          }
+        : { type: selectedType, content: values.content },
+    );
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setError(message);
+      toast.error(message);
       return;
     }
 
+    const toastId = toast.loading("بنحفظ...");
     try {
       const response = await api("/items", {
         method: "POST",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     }
 
     form.reset();
     await queryClient.invalidateQueries({ queryKey: ["items"] });
+    toast.success("اتحفظت", { id: toastId });
   }
 
   let field: ReactNode;
@@ -93,20 +107,34 @@ export default function CaptureForm() {
       break;
     case "link":
       field = (
-        <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="capture-link">
-            الرابط
-          </label>
-          <input
-            id="capture-link"
-            type="url"
-            maxLength={LINK_MAX_LENGTH}
-            autoComplete="off"
-            dir="ltr"
-            className={fieldClass}
-            {...form.register("content")}
-          />
-        </div>
+        <>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="capture-link">
+              الرابط
+            </label>
+            <input
+              id="capture-link"
+              type="url"
+              maxLength={LINK_MAX_LENGTH}
+              autoComplete="off"
+              dir="ltr"
+              className={fieldClass}
+              {...form.register("content")}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="capture-link-note">
+              ملاحظة (اختياري)
+            </label>
+            <textarea
+              id="capture-link-note"
+              rows={3}
+              maxLength={TEXT_MAX_LENGTH}
+              className={fieldClass}
+              {...form.register("note")}
+            />
+          </div>
+        </>
       );
       break;
     case "voice":

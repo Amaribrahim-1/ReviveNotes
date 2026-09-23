@@ -4,6 +4,7 @@ import {
   IMAGE_MAX_BYTES,
   imageContentTypeSchema,
   itemListQuerySchema,
+  itemNoteSchema,
   linkContentSchema,
   linkPreviewSchema,
   textContentSchema,
@@ -44,6 +45,7 @@ const itemSelect = {
   id: true,
   type: true,
   content: true,
+  note: true,
   status: true,
   category_id: true,
   link_preview: true,
@@ -57,6 +59,17 @@ const itemSelect = {
 
 function firstIssueMessage(issues: { message: string }[]): string {
   return issues[0]?.message ?? "البيانات مش مظبوطة";
+}
+
+function readOptionalNote(value: unknown): { ok: true; note: string | null } | { ok: false; error: string } {
+  if (value === undefined) {
+    return { ok: true, note: null };
+  }
+  const parsed = itemNoteSchema.safeParse(value);
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueMessage(parsed.error.issues) };
+  }
+  return { ok: true, note: parsed.data };
 }
 
 function paramId(req: Request): string | null {
@@ -90,6 +103,7 @@ type StoredItem = {
   id: string;
   type: "link" | "text" | "voice" | "image";
   content: string;
+  note: string | null;
   status: "inbox" | "active" | "done" | "archived";
   category_id: string | null;
   link_preview: unknown;
@@ -148,6 +162,7 @@ function toItem(row: StoredItem, user: { timezone: string; day_start_time: numbe
     id: row.id,
     type: row.type,
     content: row.content,
+    note: row.note,
     status: row.status,
     category_id: row.category_id,
     tag_ids: tagIdsOf(row.item_tags),
@@ -169,6 +184,7 @@ export async function createItem(req: Request, res: Response) {
   const user = readSignedInUser(res);
   // A refused or failed preview still saves the link. content stays the URL.
   const linkPreview = parsed.data.type === "link" ? await fetchLinkPreview(parsed.data.content) : null;
+  const note = parsed.data.type === "link" ? (parsed.data.note ?? null) : null;
   // One clock read so last_touched_at matches created_at. Reads do not move it later.
   const now = new Date();
   const item = await prisma.item.create({
@@ -176,6 +192,7 @@ export async function createItem(req: Request, res: Response) {
       user_id: user.id,
       type: parsed.data.type,
       content: parsed.data.content,
+      note,
       status: "inbox",
       link_preview: linkPreview === null ? Prisma.DbNull : linkPreview,
       created_at: now,
@@ -379,7 +396,14 @@ export async function updateItem(req: Request, res: Response) {
     }
   }
 
-  const touched = contentChanged || statusChanged || categoryChanged || tagsChanged;
+  let nextNote = item.note;
+  let noteChanged = false;
+  if (parsed.data.note !== undefined && parsed.data.note !== item.note) {
+    nextNote = parsed.data.note;
+    noteChanged = true;
+  }
+
+  const touched = contentChanged || statusChanged || categoryChanged || tagsChanged || noteChanged;
   if (!touched) {
     res.json(toItem(item, user));
     return;
@@ -416,6 +440,7 @@ export async function updateItem(req: Request, res: Response) {
       status?: StoredItem["status"];
       category_id?: string | null;
       link_preview?: LinkPreview | typeof Prisma.DbNull;
+      note?: string | null;
       last_touched_at: Date;
     } = {
       last_touched_at: now,
@@ -431,6 +456,9 @@ export async function updateItem(req: Request, res: Response) {
     }
     if (categoryChanged) {
       data.category_id = nextCategoryId;
+    }
+    if (noteChanged) {
+      data.note = nextNote;
     }
 
     await tx.item.update({
@@ -659,6 +687,12 @@ async function createVoiceItem(req: Request, res: Response) {
     return;
   }
 
+  const noteInput = readOptionalNote(req.body.note);
+  if (!noteInput.ok) {
+    res.status(400).json({ error: noteInput.error });
+    return;
+  }
+
   const user = readSignedInUser(res);
   // The id is chosen here so the object key can be stored in the same insert.
   const id = randomUUID();
@@ -670,6 +704,7 @@ async function createVoiceItem(req: Request, res: Response) {
       user_id: user.id,
       type: "voice",
       content: key,
+      note: noteInput.note,
       status: "inbox",
       category_id: null,
       duration_seconds: duration.data,
@@ -784,6 +819,12 @@ async function createImageItem(req: Request, res: Response) {
     return;
   }
 
+  const noteInput = readOptionalNote(req.body.note);
+  if (!noteInput.ok) {
+    res.status(400).json({ error: noteInput.error });
+    return;
+  }
+
   const user = readSignedInUser(res);
   const id = randomUUID();
   const key = `${user.id}/${id}.${kind.extension}`;
@@ -795,6 +836,7 @@ async function createImageItem(req: Request, res: Response) {
         user_id: user.id,
         type: "image",
         content: key,
+        note: noteInput.note,
         status: "inbox",
         category_id: null,
         created_at: now,

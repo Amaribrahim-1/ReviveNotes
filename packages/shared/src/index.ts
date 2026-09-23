@@ -14,6 +14,7 @@ export {
   ITEM_STATUSES,
   ITEM_TYPES,
   itemListQuerySchema,
+  itemNoteSchema,
   linkContentSchema,
   linkPreviewSchema,
   LINK_MAX_LENGTH,
