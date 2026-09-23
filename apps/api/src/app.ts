@@ -7,7 +7,17 @@ import {
   listCategories,
   updateCategory,
 } from "./category-routes.js";
-import { createItem, deleteItem, getItem, listItems, postVoiceItem, streamItemFile, updateItem } from "./item-routes.js";
+import {
+  createItem,
+  deleteItem,
+  getItem,
+  listItems,
+  listRevival,
+  postVoiceItem,
+  reviveItem,
+  streamItemFile,
+  updateItem,
+} from "./item-routes.js";
 import { requireUser } from "./require-user.js";
 import { createTag, deleteTag, listTags, updateTag } from "./tag-routes.js";
 
@@ -37,12 +47,14 @@ app.post("/tags", requireUser, createTag);
 app.patch("/tags/:id", requireUser, updateTag);
 app.delete("/tags/:id", requireUser, deleteTag);
 
+app.get("/revival", requireUser, listRevival);
 app.get("/items", requireUser, listItems);
 app.post("/items", requireUser, createItem);
 app.post("/items/voice", requireUser, postVoiceItem);
 app.get("/items/:id/file", requireUser, streamItemFile);
 app.get("/items/:id", requireUser, getItem);
 app.patch("/items/:id", requireUser, updateItem);
+app.post("/items/:id/revive", requireUser, reviveItem);
 app.delete("/items/:id", requireUser, deleteItem);
 
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {

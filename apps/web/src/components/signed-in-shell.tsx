@@ -1,11 +1,12 @@
 "use client";
 
-import type { PublicUser } from "@revivenotes/shared";
+import type { PublicUser, RevivalList } from "@revivenotes/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import RevivalScreen from "@/components/RevivalScreen";
 import { api } from "@/lib/api";
 
 type SignedInShellProps = {
@@ -49,12 +50,36 @@ export function SignedInShell({ children }: SignedInShellProps) {
     },
   });
 
+  // One fetch while this browser tab stays open. A full reload builds a new
+  // QueryClient and asks again. Moving between pages reuses this result.
+  const revival = useQuery({
+    queryKey: ["revival"],
+    enabled: me.isSuccess,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async (): Promise<RevivalList> => {
+      let response: Response;
+      try {
+        response = await api("/revival");
+      } catch {
+        throw new Error("offline");
+      }
+      if (response.status === 401) {
+        throw new Error("no-session");
+      }
+      if (!response.ok) {
+        throw new Error("offline");
+      }
+      return response.json() as Promise<RevivalList>;
+    },
+  });
+
   useEffect(() => {
-    if (!isNoSession(me.error)) {
+    if (!isNoSession(me.error) && !isNoSession(revival.error)) {
       return;
     }
     window.location.assign("/login");
-  }, [me.error]);
+  }, [me.error, revival.error]);
 
   async function onLogout() {
     setLeaving(true);
@@ -70,6 +95,14 @@ export function SignedInShell({ children }: SignedInShellProps) {
     return (
       <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
         <p>بنأكد الجلسة...</p>
+      </main>
+    );
+  }
+
+  if (isNoSession(revival.error)) {
+    return (
+      <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
+        <p>بنحوّلك على صفحة الدخول...</p>
       </main>
     );
   }
@@ -97,6 +130,10 @@ export function SignedInShell({ children }: SignedInShellProps) {
     );
   }
 
+  const revivalItems = revival.data?.items ?? [];
+  const showRevival = revivalItems.length > 0;
+  const waitingForRevival = revival.isPending || revival.isError || !revival.data;
+
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-10">
       <header className="flex flex-col gap-3">
@@ -111,20 +148,36 @@ export function SignedInShell({ children }: SignedInShellProps) {
             خروج
           </button>
         </div>
-        <nav className="flex flex-wrap gap-4" aria-label="التنقل">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={pathname === link.href ? "page" : undefined}
-              className="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {showRevival || waitingForRevival ? null : (
+          <nav className="flex flex-wrap gap-4" aria-label="التنقل">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={pathname === link.href ? "page" : undefined}
+                className="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
-      {children}
+      {revival.isPending ? <p>بنشوف الملاحظات القديمة...</p> : null}
+      {revival.isError ? (
+        <div className="flex flex-col gap-3">
+          <p>مش قادرين نجيب الملاحظات القديمة</p>
+          <button
+            type="button"
+            onClick={() => void revival.refetch()}
+            className="w-fit rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          >
+            حاول تاني
+          </button>
+        </div>
+      ) : null}
+      {showRevival ? <RevivalScreen items={revivalItems} /> : null}
+      {showRevival || waitingForRevival ? null : children}
     </main>
   );
 }

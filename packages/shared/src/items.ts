@@ -124,3 +124,7 @@ export type ItemPage = {
   items: Item[];
   next_cursor: string | null;
 };
+
+export type RevivalList = {
+  items: Item[];
+};

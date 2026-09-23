@@ -58,9 +58,19 @@ Editing a link URL clears `link_preview`, because the old preview described the 
 
 `GET /items` stays the only list. Optional `category_id`, `status`, and `type` are one value each and combine with AND. Repeated `tag` matches an item that has any of those tags. Omitting `tag` does not filter tags. Omitting `status` returns every status.
 
-A second list route was rejected. The cursor stays `created_at|id` inside that same filtered query, so the next page does not walk outside the filters. A category id that belongs to someone else matches no rows for the caller, because every row is also limited to `user_id`.
+A second filtered list route was rejected. The cursor stays `created_at|id` inside that same filtered query, so the next page does not walk outside the filters. Revival is a different list, added below. A category id that belongs to someone else matches no rows for the caller, because every row is also limited to `user_id`.
 
 The all-items screen keeps the chosen filters in Zustand. TanStack Query keeps the item pages. The item array is not copied into Zustand.
+
+## Revival
+
+An item is stale when `status` is `inbox` or `active` and `last_touched_at` is strictly earlier than now minus 7 × 24 hours. A touch at exactly that age stays off the list. `done` and `archived` are never stale. The window is not the user's day, so `day_start_time` and `timezone` are not part of the cutoff. Shifting the cutoff through the day boundary was rejected, because the spec measures 7 × 24 hours from the current instant.
+
+`GET /revival` returns that list for the caller and does not write. It is not `GET /items/:id` and it is not a page of `GET /items`. The all-items screen still uses `GET /items`. Oldest `last_touched_at` is first, then `id`, so the most neglected note is at the top. This task does not paginate.
+
+`POST /items/:id/revive` sets `last_touched_at` to now. `created_at` and `status` stay, so the note does not jump into today. A cron job was rejected because the spec runs this when the app loads, not on a timer.
+
+The signed-in shell asks once per full page load. TanStack Query keeps that result fresh for the whole tab (`staleTime: Infinity`), so a client-side navigation does not ask again. Revive and delete remove the row from that cached list. When the list is empty, the normal page shows. A full reload asks again.
 
 ## Voice bytes
 

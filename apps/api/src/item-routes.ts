@@ -17,6 +17,9 @@ import { readSignedInUser } from "./require-user.js";
 import { getUserDayRange } from "./user-day.js";
 
 const PAGE_SIZE = 30;
+// Seven times 24 hours. This is not the user's day, so day_start_time is not used.
+// A touch at exactly this age is still fresh. Only an earlier last_touched_at is stale.
+const STALE_MS = 7 * 24 * 60 * 60 * 1000;
 const NOT_FOUND = "مش موجود";
 const BAD_CURSOR = "المؤشر مش مفهوم";
 const BAD_CATEGORY = "التصنيف مش موجود";
@@ -473,6 +476,51 @@ export async function deleteItem(req: Request, res: Response) {
   });
 
   res.status(204).end();
+}
+
+export async function listRevival(_req: Request, res: Response) {
+  const user = readSignedInUser(res);
+  const cutoff = new Date(Date.now() - STALE_MS);
+  // Reading this list is not a touch. Nothing here writes last_touched_at.
+  const rows = await prisma.item.findMany({
+    where: {
+      user_id: user.id,
+      status: { in: ["inbox", "active"] },
+      last_touched_at: { lt: cutoff },
+    },
+    orderBy: [{ last_touched_at: "asc" }, { id: "asc" }],
+    select: itemSelect,
+  });
+
+  res.json({ items: rows.map((row) => toItem(row, user)) });
+}
+
+export async function reviveItem(req: Request, res: Response) {
+  const user = readSignedInUser(res);
+  const id = paramId(req);
+  if (!id) {
+    res.status(404).json({ error: NOT_FOUND });
+    return;
+  }
+
+  const item = await prisma.item.findFirst({
+    where: { id, user_id: user.id },
+    select: { id: true },
+  });
+  if (!item) {
+    res.status(404).json({ error: NOT_FOUND });
+    return;
+  }
+
+  const now = new Date();
+  // Revive is a touch. created_at and status are not in this update, so they stay.
+  const saved = await prisma.item.update({
+    where: { id: item.id },
+    data: { last_touched_at: now },
+    select: itemSelect,
+  });
+
+  res.json(toItem(saved, user));
 }
 
 type VoiceKind = {

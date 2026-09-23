@@ -25,6 +25,7 @@ export type {
   ItemPage,
   ItemStatus,
   ItemType,
+  RevivalList,
   UpdateItemInput,
 } from "./items.js";
 export { CATEGORY_COLORS, categorySchema, tagSchema } from "./labels.js";
