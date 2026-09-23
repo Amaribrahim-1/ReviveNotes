@@ -95,8 +95,8 @@ describe("settings", () => {
     expect(patched.body).toMatchObject({
       timezone: "America/New_York",
       day_start_time: 5,
-      reminders_enabled: false,
-      reminder_times: [],
+      reminders_enabled: true,
+      reminder_times: ["09:00"],
     });
     expect(patched.body.password_hash).toBeUndefined();
 
@@ -105,6 +105,8 @@ describe("settings", () => {
     expect(userA.body).toMatchObject({
       timezone: "Africa/Cairo",
       day_start_time: 0,
+      reminders_enabled: false,
+      reminder_times: [],
     });
 
     const userB = await request(app).get("/me").set("Cookie", cookiesB);

@@ -13,6 +13,22 @@ export type UserDayRange = {
   localDate: string;
 };
 
+export type LocalCalendar = {
+  localDate: string;
+  hour: number;
+  minute: number;
+};
+
+// Calendar date in the timezone. Reminder slots use this, not the day-start window.
+export function readLocalCalendar(instant: Date, timezone: string): LocalCalendar {
+  const local = readLocalClock(instant, timezone);
+  return {
+    localDate: formatLocalDate(local.year, local.month, local.day),
+    hour: local.hour,
+    minute: local.minute,
+  };
+}
+
 // Cairo with dayStartHour 14 runs 14:00–14:00. 13:00 local belongs to the previous calendar date.
 export function getUserDayRange(timezone: string, dayStartHour: number, instant: Date): UserDayRange {
   const local = readLocalClock(instant, timezone);

@@ -72,6 +72,18 @@ An item is stale when `status` is `inbox` or `active` and `last_touched_at` is s
 
 The signed-in shell asks once per full page load. TanStack Query keeps that result fresh for the whole tab (`staleTime: Infinity`), so a client-side navigation does not ask again. Revive and delete remove the row from that cached list. When the list is empty, the normal page shows. A full reload asks again.
 
+## Reminders
+
+Reminders are Web Push, and they stay off until the user turns them on and picks 1 to 3 times. The notification body is only the count of items in `inbox` or `active`. A cron-job.org job POSTs `/reminders/dispatch` every 5 minutes. That gap sits inside Render's 15-minute sleep, so this one web service stays awake. The route has no user session. The header `x-cron-secret` must match `CRON_SECRET`. A second always-on worker was rejected, because the free 750 hours are almost all used by this one service.
+
+cron-job.org closes the connection after about 30 seconds. A cold start can die in that window. The delivery row is written only after a push is accepted, so the next tick finishes the users that were missed. A few minutes of slip is accepted. iOS may not deliver the push. That gap is accepted.
+
+The slot is the calendar date in `timezone` plus `HH:MM`. `day_start_time` is not added to it. The API uses the `web-push` package to send VAPID Web Push. Hand-rolling that encryption was rejected. The browser asks the API for the public key, so the private key stays in the API env.
+
+The service worker handles `push` and `notificationclick` only. It does not cache pages, API calls, or media. The manifest has no share target yet.
+
+Brave ships the Push API but leaves Google's push service off. `subscribe` then fails even after the site permission is allowed. Chrome leaves that service on, so the same button works there. The settings page detects Brave and tells the user to turn on "Use Google services for push messaging" in `brave://settings/privacy`, then restart the browser. A second push vendor was rejected.
+
 ## Voice bytes
 
 A voice clip is stored in Cloudflare R2. The item row keeps the private object key in `content`, shaped like `{user_id}/{item_id}.webm` or `.ogg`. `GET /items/:id/file` loads the row with `id` and `user_id`, then the API streams the bytes. The JSON body and the audio element never get an R2 host.

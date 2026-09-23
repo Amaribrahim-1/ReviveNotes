@@ -1,5 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { login, logout, me, refresh, register } from "./auth-routes.js";
+import { createPushSubscription, deletePushSubscription, vapidPublicKey } from "./push-routes.js";
+import { dispatchReminders } from "./reminder-routes.js";
 import { updateSettings } from "./settings-routes.js";
 import {
   createCategory,
@@ -36,6 +38,10 @@ app.post("/auth/refresh", refresh);
 app.post("/auth/logout", logout);
 app.get("/me", requireUser, me);
 app.patch("/me", requireUser, updateSettings);
+app.get("/push/vapid-public-key", requireUser, vapidPublicKey);
+app.post("/push-subscriptions", requireUser, createPushSubscription);
+app.delete("/push-subscriptions/:id", requireUser, deletePushSubscription);
+app.post("/reminders/dispatch", dispatchReminders);
 
 app.get("/categories", requireUser, listCategories);
 app.post("/categories", requireUser, createCategory);

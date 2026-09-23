@@ -2,6 +2,8 @@ export const APP_NAME = "ReviveNotes";
 
 export { loginSchema, registerSchema } from "./auth.js";
 export type { LoginInput, PublicUser, RegisterInput } from "./auth.js";
+export { pushSubscriptionSchema } from "./push.js";
+export type { PushSubscriptionInput } from "./push.js";
 export { updateSettingsSchema } from "./settings.js";
 export type { UpdateSettingsInput } from "./settings.js";
 export {
