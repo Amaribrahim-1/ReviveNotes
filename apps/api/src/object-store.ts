@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Readable } from "node:stream";
 
 let client: S3Client | null = null;
@@ -39,6 +39,16 @@ export async function putPrivateObject(key: string, body: Buffer, contentType: s
       Key: key,
       Body: body,
       ContentType: contentType,
+    }),
+  );
+}
+
+export async function deletePrivateObject(key: string): Promise<void> {
+  const config = readR2Env();
+  await r2().send(
+    new DeleteObjectCommand({
+      Bucket: config.bucket,
+      Key: key,
     }),
   );
 }

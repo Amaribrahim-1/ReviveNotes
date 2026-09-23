@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { api, apiError } from "@/lib/api";
+import ImageCapture from "./ImageCapture";
 import VoiceCapture from "./VoiceCapture";
 
 const fieldClass =
@@ -17,6 +18,7 @@ const captureTypes = [
   { id: "text", label: "نص" },
   { id: "link", label: "رابط" },
   { id: "voice", label: "صوت" },
+  { id: "image", label: "صورة" },
 ] as const;
 
 type CaptureType = (typeof captureTypes)[number]["id"];
@@ -40,7 +42,7 @@ export default function CaptureForm() {
   }
 
   async function onSubmit(values: CaptureFields) {
-    if (selectedType === "voice") {
+    if (selectedType === "voice" || selectedType === "image") {
       return;
     }
     setError(null);
@@ -108,6 +110,7 @@ export default function CaptureForm() {
       );
       break;
     case "voice":
+    case "image":
       field = null;
       break;
   }
@@ -133,6 +136,8 @@ export default function CaptureForm() {
       </div>
       {selectedType === "voice" ? (
         <VoiceCapture />
+      ) : selectedType === "image" ? (
+        <ImageCapture />
       ) : (
         <>
           <div key={selectedType}>{field}</div>

@@ -1,6 +1,7 @@
 import type { Item } from "@revivenotes/shared";
 import Link from "next/link";
 import { formatVoiceDuration } from "./format-voice-duration";
+import ItemImage from "./ItemImage";
 import LinkPreviewCard from "./LinkPreviewCard";
 import VoicePlayButton from "./VoicePlayButton";
 
@@ -9,6 +10,18 @@ type ItemCardProps = {
 };
 
 export default function ItemCard({ item }: ItemCardProps) {
+  if (item.type === "image") {
+    return (
+      <Link
+        href={`/items/${item.id}`}
+        aria-label="فتح صورة الملاحظة"
+        className="block rounded border border-amber-200 bg-amber-50 p-4 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+      >
+        <ItemImage itemId={item.id} size="thumb" />
+      </Link>
+    );
+  }
+
   if (item.type === "voice") {
     return (
       <article className="flex items-center justify-between gap-3 rounded border border-amber-200 bg-amber-50 p-4 shadow-sm">

@@ -4,6 +4,9 @@ export const TEXT_MAX_LENGTH = 10000;
 export const LINK_MAX_LENGTH = 2000;
 export const VOICE_MAX_SECONDS = 600;
 export const VOICE_MAX_BYTES = 15 * 1024 * 1024;
+// A photo cap. The voice cap above is a different number and stays 15 MB.
+export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 
 export const ITEM_STATUSES = ["inbox", "active", "done", "archived"] as const;
 export const ITEM_TYPES = ["link", "text", "voice", "image"] as const;
@@ -45,6 +48,10 @@ export const voiceDurationSchema = z
   .regex(/^\d{1,3}$/, { error: "مدة التسجيل مش مظبوطة" })
   .transform((value) => Number(value))
   .refine((value) => value <= VOICE_MAX_SECONDS, { error: "التسجيل أطول من 10 دقايق" });
+
+export const imageContentTypeSchema = z.enum(IMAGE_CONTENT_TYPES, {
+  error: "نوع الصورة لازم يكون jpeg أو png أو webp أو gif",
+});
 
 const tagIdSchema = z
   .string({ error: "الوسم مش موجود" })

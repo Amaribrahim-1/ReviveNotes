@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   createItemSchema,
+  IMAGE_MAX_BYTES,
+  imageContentTypeSchema,
   itemListQuerySchema,
   linkContentSchema,
   linkPreviewSchema,
@@ -15,7 +17,7 @@ import multer from "multer";
 import { prisma } from "./db.js";
 import { Prisma } from "./generated/prisma/client.js";
 import { fetchLinkPreview } from "./link-preview.js";
-import { openPrivateObject, putPrivateObject } from "./object-store.js";
+import { deletePrivateObject, openPrivateObject, putPrivateObject } from "./object-store.js";
 import { readSignedInUser } from "./require-user.js";
 import { getUserDayRange } from "./user-day.js";
 
@@ -32,6 +34,10 @@ const VOICE_TOO_BIG = "التسجيل أكبر من 15 ميجا";
 const VOICE_EMPTY = "التسجيل فاضي";
 const VOICE_TYPE = "نوع التسجيل لازم يكون webm أو ogg";
 const VOICE_BAD = "التسجيل مش مظبوط";
+const IMAGE_TOO_BIG = "الصورة أكبر من 5 ميجا";
+const IMAGE_EMPTY = "الصورة فاضية";
+const IMAGE_TYPE = "نوع الصورة لازم يكون jpeg أو png أو webp أو gif";
+const IMAGE_BAD = "الصورة مش مظبوطة";
 const SERVER_ERROR = "حصل خطأ في السيرفر";
 
 const itemSelect = {
@@ -564,12 +570,24 @@ function voiceKind(mime: string): VoiceKind | null {
   return null;
 }
 
-function contentTypeFromKey(key: string): VoiceKind["contentType"] | null {
+function contentTypeFromKey(key: string): string | null {
   if (key.endsWith(".webm")) {
     return "audio/webm";
   }
   if (key.endsWith(".ogg")) {
     return "audio/ogg";
+  }
+  if (key.endsWith(".jpg")) {
+    return "image/jpeg";
+  }
+  if (key.endsWith(".png")) {
+    return "image/png";
+  }
+  if (key.endsWith(".webp")) {
+    return "image/webp";
+  }
+  if (key.endsWith(".gif")) {
+    return "image/gif";
   }
   return null;
 }
@@ -680,6 +698,148 @@ async function createVoiceItem(req: Request, res: Response) {
   res.status(201).json(toItem(saved, user));
 }
 
+type ImageKind = {
+  extension: "jpg" | "png" | "webp" | "gif";
+  contentType: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+};
+
+function imageKind(mime: string): ImageKind | null {
+  const base = mime.split(";")[0]?.trim().toLowerCase() ?? "";
+  const parsed = imageContentTypeSchema.safeParse(base);
+  if (!parsed.success) {
+    return null;
+  }
+  if (parsed.data === "image/jpeg") {
+    return { extension: "jpg", contentType: "image/jpeg" };
+  }
+  if (parsed.data === "image/png") {
+    return { extension: "png", contentType: "image/png" };
+  }
+  if (parsed.data === "image/webp") {
+    return { extension: "webp", contentType: "image/webp" };
+  }
+  if (parsed.data === "image/gif") {
+    return { extension: "gif", contentType: "image/gif" };
+  }
+  return null;
+}
+
+type ImageFile = {
+  buffer: Buffer;
+  size: number;
+  mimetype: string;
+};
+
+function readImageFile(req: Request): ImageFile | undefined {
+  const withFile = req as Request & { file?: ImageFile };
+  const file = withFile.file;
+  if (!file || !Buffer.isBuffer(file.buffer) || typeof file.mimetype !== "string") {
+    return undefined;
+  }
+  return file;
+}
+
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: IMAGE_MAX_BYTES,
+    files: 1,
+  },
+}).single("image");
+
+export function postImageItem(req: Request, res: Response) {
+  imageUpload(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+      res.status(400).json({ error: IMAGE_TOO_BIG });
+      return;
+    }
+    if (error) {
+      res.status(400).json({ error: IMAGE_BAD });
+      return;
+    }
+    void createImageItem(req, res).catch((failure: unknown) => {
+      console.error(failure);
+      if (!res.headersSent) {
+        res.status(500).json({ error: SERVER_ERROR });
+      }
+    });
+  });
+}
+
+async function createImageItem(req: Request, res: Response) {
+  const file = readImageFile(req);
+  if (!file || file.size === 0 || file.buffer.length === 0) {
+    res.status(400).json({ error: IMAGE_EMPTY });
+    return;
+  }
+  // Reject the whole file. Do not keep a 5 MB piece of a larger upload.
+  if (file.size > IMAGE_MAX_BYTES || file.buffer.length > IMAGE_MAX_BYTES) {
+    res.status(400).json({ error: IMAGE_TOO_BIG });
+    return;
+  }
+
+  const kind = imageKind(file.mimetype);
+  if (!kind) {
+    res.status(400).json({ error: IMAGE_TYPE });
+    return;
+  }
+
+  const user = readSignedInUser(res);
+  const id = randomUUID();
+  const key = `${user.id}/${id}.${kind.extension}`;
+  const now = new Date();
+  try {
+    await prisma.item.create({
+      data: {
+        id,
+        user_id: user.id,
+        type: "image",
+        content: key,
+        status: "inbox",
+        category_id: null,
+        created_at: now,
+        last_touched_at: now,
+      },
+    });
+  } catch (failure: unknown) {
+    console.error(failure);
+    res.status(500).json({ error: SERVER_ERROR });
+    return;
+  }
+
+  try {
+    await putPrivateObject(key, file.buffer, kind.contentType);
+  } catch {
+    await removeRejectedImage(id, key);
+    res.status(500).json({ error: SERVER_ERROR });
+    return;
+  }
+
+  const saved = await prisma.item.findFirst({
+    where: { id, user_id: user.id },
+    select: itemSelect,
+  });
+  if (!saved) {
+    await removeRejectedImage(id, key);
+    res.status(500).json({ error: SERVER_ERROR });
+    return;
+  }
+
+  res.status(201).json(toItem(saved, user));
+}
+
+// The note is removed first. The file is removed only after that row is gone.
+async function removeRejectedImage(id: string, key: string) {
+  await prisma.item.delete({ where: { id } }).catch(() => undefined);
+  const stillThere = await prisma.item.findFirst({
+    where: { id },
+    select: { id: true },
+  });
+  if (!stillThere) {
+    await deletePrivateObject(key).catch(() => undefined);
+  }
+}
+
 export async function streamItemFile(req: Request, res: Response) {
   const user = readSignedInUser(res);
   const id = paramId(req);
@@ -693,13 +853,21 @@ export async function streamItemFile(req: Request, res: Response) {
     where: { id, user_id: user.id },
     select: { type: true, content: true },
   });
-  if (!item || item.type !== "voice") {
+  if (!item || (item.type !== "voice" && item.type !== "image")) {
     res.status(404).json({ error: NOT_FOUND });
     return;
   }
 
   const contentType = contentTypeFromKey(item.content);
   if (!contentType) {
+    res.status(404).json({ error: NOT_FOUND });
+    return;
+  }
+  if (item.type === "voice" && !contentType.startsWith("audio/")) {
+    res.status(404).json({ error: NOT_FOUND });
+    return;
+  }
+  if (item.type === "image" && !contentType.startsWith("image/")) {
     res.status(404).json({ error: NOT_FOUND });
     return;
   }

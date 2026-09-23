@@ -15,6 +15,7 @@ import {
   getItem,
   listItems,
   listRevival,
+  postImageItem,
   postVoiceItem,
   reviveItem,
   streamItemFile,
@@ -59,6 +60,7 @@ app.get("/revival", requireUser, listRevival);
 app.get("/items", requireUser, listItems);
 app.post("/items", requireUser, createItem);
 app.post("/items/voice", requireUser, postVoiceItem);
+app.post("/items/image", requireUser, postImageItem);
 app.get("/items/:id/file", requireUser, streamItemFile);
 app.get("/items/:id", requireUser, getItem);
 app.patch("/items/:id", requireUser, updateItem);

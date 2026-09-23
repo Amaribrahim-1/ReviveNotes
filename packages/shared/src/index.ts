@@ -8,6 +8,9 @@ export { updateSettingsSchema } from "./settings.js";
 export type { UpdateSettingsInput } from "./settings.js";
 export {
   createItemSchema,
+  IMAGE_CONTENT_TYPES,
+  IMAGE_MAX_BYTES,
+  imageContentTypeSchema,
   ITEM_STATUSES,
   ITEM_TYPES,
   itemListQuerySchema,

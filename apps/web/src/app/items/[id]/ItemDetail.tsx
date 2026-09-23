@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
+import ItemImage from "@/components/items/ItemImage";
 import LinkPreviewCard from "@/components/items/LinkPreviewCard";
 import VoicePlayButton from "@/components/items/VoicePlayButton";
 import { api, apiError } from "@/lib/api";
@@ -120,6 +121,8 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
         />
       </>
     );
+  } else if (item.data.type === "image") {
+    body = <ItemImage itemId={item.data.id} size="full" />;
   } else if (item.data.type === "voice") {
     body = (
       <div className="flex items-center justify-between gap-3">
