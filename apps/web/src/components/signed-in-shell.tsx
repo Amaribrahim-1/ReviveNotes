@@ -1,6 +1,6 @@
 "use client";
 
-import type { PublicUser, RevivalList } from "@revivenotes/shared";
+import type { PublicUser, RevivalList, TodayProgress } from "@revivenotes/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -74,12 +74,33 @@ export function SignedInShell({ children }: SignedInShellProps) {
     },
   });
 
+  const progress = useQuery({
+    queryKey: ["progress"],
+    enabled: me.isSuccess,
+    retry: false,
+    queryFn: async (): Promise<TodayProgress> => {
+      let response: Response;
+      try {
+        response = await api("/progress/today");
+      } catch {
+        throw new Error("offline");
+      }
+      if (response.status === 401) {
+        throw new Error("no-session");
+      }
+      if (!response.ok) {
+        throw new Error("offline");
+      }
+      return response.json() as Promise<TodayProgress>;
+    },
+  });
+
   useEffect(() => {
-    if (!isNoSession(me.error) && !isNoSession(revival.error)) {
+    if (!isNoSession(me.error) && !isNoSession(revival.error) && !isNoSession(progress.error)) {
       return;
     }
     window.location.assign("/login");
-  }, [me.error, revival.error]);
+  }, [me.error, revival.error, progress.error]);
 
   async function onLogout() {
     setLeaving(true);
@@ -148,6 +169,12 @@ export function SignedInShell({ children }: SignedInShellProps) {
             خروج
           </button>
         </div>
+        {progress.isSuccess ? (
+          <p>
+            خلّصت النهارده <span dir="ltr">{progress.data.cleared}</span>
+          </p>
+        ) : null}
+        {progress.isError && !isNoSession(progress.error) ? <p>مش قادرين نجيب العدّاد</p> : null}
         {showRevival || waitingForRevival ? null : (
           <nav className="flex flex-wrap gap-4" aria-label="التنقل">
             {links.map((link) => (

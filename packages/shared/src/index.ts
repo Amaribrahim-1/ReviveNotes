@@ -32,3 +32,4 @@ export type {
 } from "./items.js";
 export { CATEGORY_COLORS, categorySchema, tagSchema } from "./labels.js";
 export type { Category, CategoryColor, CategoryInput, Tag, TagInput } from "./labels.js";
+export type { TodayProgress } from "./progress.js";

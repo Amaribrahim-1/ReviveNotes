@@ -63,6 +63,7 @@ export default function RevivalRow({ item }: RevivalRowProps) {
       dropFromRevival(queryClient, item.id);
       queryClient.removeQueries({ queryKey: ["item", item.id] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
+      await queryClient.invalidateQueries({ queryKey: ["progress"] });
     } catch {
       setError("مش قادرين نوصل للسيرفر");
     } finally {

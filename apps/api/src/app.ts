@@ -20,6 +20,7 @@ import {
   streamItemFile,
   updateItem,
 } from "./item-routes.js";
+import { getTodayProgress } from "./progress-routes.js";
 import { requireUser } from "./require-user.js";
 import { createTag, deleteTag, listTags, updateTag } from "./tag-routes.js";
 
@@ -53,6 +54,7 @@ app.post("/tags", requireUser, createTag);
 app.patch("/tags/:id", requireUser, updateTag);
 app.delete("/tags/:id", requireUser, deleteTag);
 
+app.get("/progress/today", requireUser, getTodayProgress);
 app.get("/revival", requireUser, listRevival);
 app.get("/items", requireUser, listItems);
 app.post("/items", requireUser, createItem);

@@ -56,6 +56,9 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
       const updated = (await response.json()) as Item;
       queryClient.setQueryData(["item", itemId], updated);
       await queryClient.invalidateQueries({ queryKey: ["items"] });
+      if (parsed.data.status !== undefined) {
+        await queryClient.invalidateQueries({ queryKey: ["progress"] });
+      }
     } catch {
       setError("مش قادرين نوصل للسيرفر");
     } finally {
@@ -71,6 +74,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
       if (response.status === 204) {
         queryClient.removeQueries({ queryKey: ["item", itemId] });
         await queryClient.invalidateQueries({ queryKey: ["items"] });
+        await queryClient.invalidateQueries({ queryKey: ["progress"] });
         router.push("/inbox");
         return;
       }

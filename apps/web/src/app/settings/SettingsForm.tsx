@@ -117,6 +117,7 @@ export default function SettingsForm() {
     setSaved(true);
     await queryClient.invalidateQueries({ queryKey: ["me"] });
     await queryClient.invalidateQueries({ queryKey: ["items"] });
+    await queryClient.invalidateQueries({ queryKey: ["progress"] });
   }
 
   function setTime(index: number, value: string) {
