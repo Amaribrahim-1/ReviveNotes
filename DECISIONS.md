@@ -8,6 +8,8 @@ Supabase, Firebase, and deploying the API as Vercel serverless were rejected. Th
 
 `dotenv` is installed in the API because Prisma 7 reads `DATABASE_URL` from `prisma.config.ts`, and Node does not load a `.env` file by itself. `tsx` was not added. The API is compiled with `tsc` and started with `node`.
 
+The local Prisma Postgres closes an idle connection. The next query then fails with Prisma `P1017` (`Server has closed the connection`), and the API was turning that into "حصل خطأ في السيرفر". The `pg` pool now drops idle clients after 10 seconds and keeps TCP keepalive on. If a query still hits a closed socket, that same query runs once more on a new connection. A second database, or hiding every database error, was rejected.
+
 ## Schema
 
 Timestamps are `timestamptz` in UTC. Prisma's default `DateTime` is `timestamp` without a time zone, so each timestamp field uses `@db.Timestamptz(3)`. Nothing shifts a stored instant to fake the user's day. "Today" is computed later, at read time, from `timezone` and `day_start_time`. `day_start_time` is an integer hour.
