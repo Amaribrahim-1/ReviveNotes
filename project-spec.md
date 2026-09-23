@@ -48,7 +48,7 @@ The custom backend stays. Do not replace it with Supabase, Firebase, or any othe
 **Infrastructure (all free tier):**
 
 - Frontend hosting: Vercel.
-- Backend hosting: Render free web service. It spins down after 15 minutes without inbound traffic and takes roughly a minute to spin back up. One service, always-on, is about 744 instance hours in a 31-day month; Render includes 750 free instance hours per workspace per month, so the keep-awake plan below fits with little margin. Railway is not the host: its free plan is a small monthly usage credit, not a dependable always-free service.
+- Backend hosting: Zeabur free plan (one Node web service). It sleeps when idle and wakes on the next request. Render free was the original host, but creating a free service there now requires a payment card for verification, which blocked this project. Railway is not the host: its free plan is a small monthly usage credit, not a dependable always-free service.
 - Database: Neon.
 - Reminder wake-ups: [cron-job.org](https://cron-job.org/en/) (free HTTP cron). It closes the connection after 30 seconds and reads at most 64 KB of the response.
 

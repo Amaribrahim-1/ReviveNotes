@@ -1,4 +1,5 @@
-# ReviveNotes API on Render free tier.
+# Kept for reference. Live API hosting moved to Zeabur (see DECISIONS.md).
+# Render free now requires a payment card before create, which blocked this project.
 # Web stays on Vercel. Do not put the Express API on Vercel serverless.
 services:
   - type: web
