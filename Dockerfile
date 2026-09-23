@@ -26,6 +26,8 @@ RUN corepack pnpm --filter @revivenotes/shared build \
   && corepack pnpm --filter @revivenotes/api build
 
 ENV NODE_ENV=production
+# Back4App health-checks this port; set it explicitly if the platform does not inject PORT.
+ENV PORT=8080
 EXPOSE 8080
 
 CMD ["sh", "-c", "corepack pnpm --filter @revivenotes/api exec prisma migrate deploy && corepack pnpm --filter @revivenotes/api start"]
