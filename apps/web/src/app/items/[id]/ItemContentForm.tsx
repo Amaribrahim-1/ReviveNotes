@@ -75,7 +75,7 @@ export default function ItemContentForm({ item, pending, onSave, onInvalid }: It
         </div>
       )}
       <button type="submit" disabled={pending} className={buttonClass}>
-        حفظ
+        {pending ? "بنحفظ..." : "حفظ"}
       </button>
     </form>
   );

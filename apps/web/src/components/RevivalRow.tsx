@@ -3,6 +3,7 @@
 import type { Item, RevivalList } from "@revivenotes/shared";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
 import ItemCard from "@/components/items/ItemCard";
 import { api, apiError } from "@/lib/api";
 
@@ -35,17 +36,22 @@ export default function RevivalRow({ item }: RevivalRowProps) {
   async function onRevive() {
     setError(null);
     setPending("revive");
+    const toastId = toast.loading("بنحيي...");
     try {
       const response = await api(`/items/${item.id}/revive`, { method: "POST" });
       if (!response.ok) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
       dropFromRevival(queryClient, item.id);
       await queryClient.invalidateQueries({ queryKey: ["items"] });
       await queryClient.invalidateQueries({ queryKey: ["item", item.id] });
+      toast.success("اتحييت", { id: toastId });
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
     } finally {
       setPending(null);
     }
@@ -54,18 +60,23 @@ export default function RevivalRow({ item }: RevivalRowProps) {
   async function onDelete() {
     setError(null);
     setPending("delete");
+    const toastId = toast.loading("بنحذف...");
     try {
       const response = await api(`/items/${item.id}`, { method: "DELETE" });
       if (response.status !== 204) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
       dropFromRevival(queryClient, item.id);
       queryClient.removeQueries({ queryKey: ["item", item.id] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
       await queryClient.invalidateQueries({ queryKey: ["progress"] });
+      toast.success("اتحذفت", { id: toastId });
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
     } finally {
       setPending(null);
     }

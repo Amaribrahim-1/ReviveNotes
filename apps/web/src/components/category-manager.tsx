@@ -10,6 +10,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import { categoryColorClass, categoryColorLabel, knownCategoryColor } from "@/lib/category-colors";
 
@@ -90,26 +91,33 @@ export function CategoryManager() {
     setFormError(null);
     const parsed = categorySchema.safeParse(values);
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setFormError(message);
+      toast.error(message);
       return;
     }
 
+    const toastId = toast.loading("بنضيف...");
     try {
       const response = await api("/categories", {
         method: "POST",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setFormError(await apiError(response));
+        const message = await apiError(response);
+        setFormError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setFormError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     }
 
     form.reset({ name: "", color: "blue" });
     await refresh();
+    toast.success("اتضاف التصنيف", { id: toastId });
   }
 
   function startEdit(category: Category) {
@@ -127,39 +135,50 @@ export function CategoryManager() {
     setFormError(null);
     const parsed = categorySchema.safeParse(values);
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setFormError(message);
+      toast.error(message);
       return;
     }
 
+    const toastId = toast.loading("بنحفظ...");
     try {
       const response = await api(`/categories/${editingId}`, {
         method: "PATCH",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setFormError(await apiError(response));
+        const message = await apiError(response);
+        setFormError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setFormError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     }
 
     setEditingId(null);
     await refresh();
+    toast.success("اتحفظ التصنيف", { id: toastId });
   }
 
   async function onDelete(id: string) {
     setDeleting(true);
     setFormError(null);
+    const toastId = toast.loading("بنحذف...");
     try {
       const response = await api(`/categories/${id}`, { method: "DELETE" });
       if (!response.ok) {
-        setFormError(await apiError(response));
+        const message = await apiError(response);
+        setFormError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setFormError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     } finally {
       setDeleting(false);
@@ -170,6 +189,7 @@ export function CategoryManager() {
     }
     setConfirmId(null);
     await refresh();
+    toast.success("اتحذف التصنيف", { id: toastId });
   }
 
   return (

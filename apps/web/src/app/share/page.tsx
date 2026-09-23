@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { saveSharedUrl, type SharedUrlResult } from "@/lib/pending-share";
 
 type ShareView = "working" | "ignored" | "invalid" | "error";
@@ -57,14 +58,24 @@ export default function SharePage() {
 
 async function runShare(setView: (view: ShareView) => void) {
   setView("working");
+  const toastId = toast.loading("بنحفظ الرابط...");
   const result = await openSharedLink();
   if (result === "saved") {
+    toast.success("اتحفظ الرابط", { id: toastId });
     window.location.assign("/inbox");
     return;
   }
   if (result === "needs-login") {
+    toast.success("هنحوّلك على الدخول عشان نحفظ الرابط", { id: toastId });
     window.location.assign("/login");
     return;
+  }
+  if (result === "ignored") {
+    toast.error("مفيش رابط. النص والصورة مش بيتسجلوا.", { id: toastId });
+  } else if (result === "invalid") {
+    toast.error("الرابط لازم يبدأ بـ http أو https.", { id: toastId });
+  } else {
+    toast.error("مش قدرنا نحفظ الرابط.", { id: toastId });
   }
   setView(result);
 }

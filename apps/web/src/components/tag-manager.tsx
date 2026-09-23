@@ -4,6 +4,7 @@ import { tagSchema, type Tag, type TagInput } from "@revivenotes/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 
 const fieldClass =
@@ -46,26 +47,33 @@ export function TagManager() {
     setFormError(null);
     const parsed = tagSchema.safeParse(values);
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setFormError(message);
+      toast.error(message);
       return;
     }
 
+    const toastId = toast.loading("بنضيف...");
     try {
       const response = await api("/tags", {
         method: "POST",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setFormError(await apiError(response));
+        const message = await apiError(response);
+        setFormError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setFormError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     }
 
     form.reset({ name: "" });
     await refresh();
+    toast.success("اتضاف الوسم", { id: toastId });
   }
 
   function startEdit(tag: Tag) {
@@ -82,39 +90,50 @@ export function TagManager() {
     setFormError(null);
     const parsed = tagSchema.safeParse(values);
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setFormError(message);
+      toast.error(message);
       return;
     }
 
+    const toastId = toast.loading("بنحفظ...");
     try {
       const response = await api(`/tags/${editingId}`, {
         method: "PATCH",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setFormError(await apiError(response));
+        const message = await apiError(response);
+        setFormError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setFormError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     }
 
     setEditingId(null);
     await refresh();
+    toast.success("اتحفظ الوسم", { id: toastId });
   }
 
   async function onDelete(id: string) {
     setDeleting(true);
     setFormError(null);
+    const toastId = toast.loading("بنحذف...");
     try {
       const response = await api(`/tags/${id}`, { method: "DELETE" });
       if (!response.ok) {
-        setFormError(await apiError(response));
+        const message = await apiError(response);
+        setFormError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setFormError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     } finally {
       setDeleting(false);
@@ -125,6 +144,7 @@ export function TagManager() {
     }
     setConfirmId(null);
     await refresh();
+    toast.success("اتحذف الوسم", { id: toastId });
   }
 
   return (

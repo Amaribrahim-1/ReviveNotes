@@ -4,6 +4,7 @@ import { updateSettingsSchema, type PublicUser } from "@revivenotes/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 
 const fieldClass =
@@ -48,7 +49,6 @@ export default function SettingsForm() {
   });
   const appliedUserId = useRef<string | null>(me.data?.id ?? null);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
   const [pushReady, setPushReady] = useState(false);
   const [pushWorking, setPushWorking] = useState(false);
@@ -93,31 +93,36 @@ export default function SettingsForm() {
 
   async function onSubmit(values: SettingsValues) {
     setError(null);
-    setSaved(false);
     const parsed = updateSettingsSchema.safeParse(values);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setError(message);
+      toast.error(message);
       return;
     }
 
+    const toastId = toast.loading("بنحفظ...");
     try {
       const response = await api("/me", {
         method: "PATCH",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     }
 
-    setSaved(true);
     await queryClient.invalidateQueries({ queryKey: ["me"] });
     await queryClient.invalidateQueries({ queryKey: ["items"] });
     await queryClient.invalidateQueries({ queryKey: ["progress"] });
+    toast.success("اتحفظت الإعدادات", { id: toastId });
   }
 
   function setTime(index: number, value: string) {
@@ -145,15 +150,20 @@ export default function SettingsForm() {
     setPushError(null);
     setPushReady(false);
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-      setPushError("المتصفح ده مش بيدعم الإشعارات");
+      const message = "المتصفح ده مش بيدعم الإشعارات";
+      setPushError(message);
+      toast.error(message);
       return;
     }
 
     setPushWorking(true);
+    const toastId = toast.loading("بنفعّل الإشعارات...");
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setPushError("المتصفح رفض الإشعارات");
+        const message = "المتصفح رفض الإشعارات";
+        setPushError(message);
+        toast.error(message, { id: toastId });
         return;
       }
 
@@ -164,12 +174,16 @@ export default function SettingsForm() {
       const ready = await navigator.serviceWorker.ready;
       const keyResponse = await api("/push/vapid-public-key");
       if (!keyResponse.ok) {
-        setPushError(await apiError(keyResponse));
+        const message = await apiError(keyResponse);
+        setPushError(message);
+        toast.error(message, { id: toastId });
         return;
       }
       const keyBody = (await keyResponse.json()) as { public_key?: string };
       if (!keyBody.public_key) {
-        setPushError("مفتاح الإشعار ناقص");
+        const message = "مفتاح الإشعار ناقص";
+        setPushError(message);
+        toast.error(message, { id: toastId });
         return;
       }
 
@@ -179,7 +193,9 @@ export default function SettingsForm() {
       });
       const keys = subscription.toJSON().keys;
       if (!keys?.p256dh || !keys.auth) {
-        setPushError("مش قادرين نسجل الإشعارات");
+        const message = "مش قادرين نسجل الإشعارات";
+        setPushError(message);
+        toast.error(message, { id: toastId });
         return;
       }
 
@@ -192,17 +208,24 @@ export default function SettingsForm() {
         }),
       });
       if (!stored.ok) {
-        setPushError(await apiError(stored));
+        const message = await apiError(stored);
+        setPushError(message);
+        toast.error(message, { id: toastId });
         return;
       }
       setPushReady(true);
+      toast.success("الإشعارات مسموحة", { id: toastId });
     } catch (error) {
       const detail = error instanceof Error ? error.message : "";
       if (detail.includes("push service")) {
-        setPushError(braveBrowser ? bravePushHint : "المتصفح مش قادر يوصل لخدمة الإشعارات.");
+        const message = braveBrowser ? bravePushHint : "المتصفح مش قادر يوصل لخدمة الإشعارات.";
+        setPushError(message);
+        toast.error(message, { id: toastId });
         return;
       }
-      setPushError("مش قادرين نفعّل الإشعارات");
+      const message = "مش قادرين نفعّل الإشعارات";
+      setPushError(message);
+      toast.error(message, { id: toastId });
     } finally {
       setPushWorking(false);
     }
@@ -320,7 +343,6 @@ export default function SettingsForm() {
             {error}
           </p>
         ) : null}
-        {saved ? <p role="status">اتحفظت الإعدادات.</p> : null}
         <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
           {form.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
         </button>

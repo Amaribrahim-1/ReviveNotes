@@ -4,6 +4,7 @@ import { loginSchema } from "@revivenotes/shared";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import { createRememberedShare, hasRememberedShare } from "@/lib/pending-share";
 
@@ -27,30 +28,39 @@ export default function LoginPage() {
     setError(null);
     const parsed = loginSchema.safeParse(values);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "راجع البيانات");
+      const message = parsed.error.issues[0]?.message ?? "راجع البيانات";
+      setError(message);
+      toast.error(message);
       return;
     }
 
+    const toastId = toast.loading("بندخل...");
     try {
       const response = await api("/auth/login", {
         method: "POST",
         body: JSON.stringify(parsed.data),
       });
       if (!response.ok) {
-        setError(await apiError(response));
+        const message = await apiError(response);
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
     } catch {
       setError("مش قادرين نوصل للسيرفر");
+      toast.error("مش قادرين نوصل للسيرفر", { id: toastId });
       return;
     }
 
     const share = await createRememberedShare();
     if (share === "error") {
-      setError("الدخول تم، والرابط لسه محفوظ. اضغط دخول تاني عشان نسجله.");
+      const message = "الدخول تم، والرابط لسه محفوظ. اضغط دخول تاني عشان نسجله.";
+      setError(message);
+      toast.error(message, { id: toastId });
       return;
     }
 
+    toast.success("اتسجل دخولك", { id: toastId });
     window.location.assign("/inbox");
   }
 
