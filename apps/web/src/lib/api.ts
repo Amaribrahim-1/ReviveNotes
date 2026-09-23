@@ -36,7 +36,9 @@ export async function api(
   alreadyRetried = false,
 ): Promise<Response> {
   const headers = new Headers(init.headers);
-  if (init.body !== undefined && !headers.has("Content-Type")) {
+  const bodyIsForm = typeof FormData !== "undefined" && init.body instanceof FormData;
+  // FormData sets its own multipart boundary. A JSON content type would drop the file.
+  if (init.body !== undefined && !bodyIsForm && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 

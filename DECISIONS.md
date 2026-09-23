@@ -61,3 +61,9 @@ Editing a link URL clears `link_preview`, because the old preview described the 
 A second list route was rejected. The cursor stays `created_at|id` inside that same filtered query, so the next page does not walk outside the filters. A category id that belongs to someone else matches no rows for the caller, because every row is also limited to `user_id`.
 
 The all-items screen keeps the chosen filters in Zustand. TanStack Query keeps the item pages. The item array is not copied into Zustand.
+
+## Voice bytes
+
+A voice clip is stored in Cloudflare R2. The item row keeps the private object key in `content`, shaped like `{user_id}/{item_id}.webm` or `.ogg`. `GET /items/:id/file` loads the row with `id` and `user_id`, then the API streams the bytes. The JSON body and the audio element never get an R2 host.
+
+A public bucket URL was rejected, because anyone with that link could play the clip. Bytes in Postgres were rejected, because the database holds rows, not audio files. Render's disk was rejected, because that disk is wiped when the free service sleeps or restarts. The bucket stays private.

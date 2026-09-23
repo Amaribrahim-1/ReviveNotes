@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const TEXT_MAX_LENGTH = 10000;
 export const LINK_MAX_LENGTH = 2000;
+export const VOICE_MAX_SECONDS = 600;
+export const VOICE_MAX_BYTES = 15 * 1024 * 1024;
 
 export const ITEM_STATUSES = ["inbox", "active", "done", "archived"] as const;
 export const ITEM_TYPES = ["link", "text", "voice", "image"] as const;
@@ -35,6 +37,14 @@ const linkItemSchema = z.object({
 export const createItemSchema = z.discriminatedUnion("type", [textItemSchema, linkItemSchema], {
   error: "اختار نص أو رابط",
 });
+
+// The multipart field arrives as text. 0 through 600 are accepted. 601 is not.
+export const voiceDurationSchema = z
+  .string({ error: "مدة التسجيل مش مظبوطة" })
+  .trim()
+  .regex(/^\d{1,3}$/, { error: "مدة التسجيل مش مظبوطة" })
+  .transform((value) => Number(value))
+  .refine((value) => value <= VOICE_MAX_SECONDS, { error: "التسجيل أطول من 10 دقايق" });
 
 const tagIdSchema = z
   .string({ error: "الوسم مش موجود" })
@@ -107,6 +117,7 @@ export type Item = {
   created_at: string;
   last_touched_at: string;
   local_date: string;
+  duration_seconds: number | null;
 };
 
 export type ItemPage = {

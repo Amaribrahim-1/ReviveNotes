@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { formatVoiceDuration } from "@/components/items/format-voice-duration";
+import VoicePlayButton from "@/components/items/VoicePlayButton";
 import { api, apiError } from "@/lib/api";
 import ItemCategoryField from "./ItemCategoryField";
 import ItemContentForm from "./ItemContentForm";
@@ -107,6 +109,15 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
           onInvalid={setError}
         />
       </>
+    );
+  } else if (item.data.type === "voice") {
+    body = (
+      <div className="flex items-center justify-between gap-3">
+        <p dir="ltr" className="text-lg">
+          {formatVoiceDuration(item.data.duration_seconds)}
+        </p>
+        <VoicePlayButton itemId={item.data.id} />
+      </div>
     );
   } else {
     body = <p>النوع ده لسه مش متاح.</p>;

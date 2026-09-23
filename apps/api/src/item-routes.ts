@@ -1,13 +1,18 @@
+import { randomUUID } from "node:crypto";
 import {
   createItemSchema,
   itemListQuerySchema,
   linkContentSchema,
   textContentSchema,
   updateItemSchema,
+  VOICE_MAX_BYTES,
+  voiceDurationSchema,
 } from "@revivenotes/shared";
 import type { Request, Response } from "express";
+import multer from "multer";
 import { prisma } from "./db.js";
 import { Prisma } from "./generated/prisma/client.js";
+import { openPrivateObject, putPrivateObject } from "./object-store.js";
 import { readSignedInUser } from "./require-user.js";
 import { getUserDayRange } from "./user-day.js";
 
@@ -17,6 +22,11 @@ const BAD_CURSOR = "المؤشر مش مفهوم";
 const BAD_CATEGORY = "التصنيف مش موجود";
 const BAD_TAG = "الوسم مش موجود";
 const CONTENT_LOCKED = "مش ممكن تعدل المحتوى ده";
+const VOICE_TOO_BIG = "التسجيل أكبر من 15 ميجا";
+const VOICE_EMPTY = "التسجيل فاضي";
+const VOICE_TYPE = "نوع التسجيل لازم يكون webm أو ogg";
+const VOICE_BAD = "التسجيل مش مظبوط";
+const SERVER_ERROR = "حصل خطأ في السيرفر";
 
 const itemSelect = {
   id: true,
@@ -27,6 +37,7 @@ const itemSelect = {
   link_preview: true,
   created_at: true,
   last_touched_at: true,
+  duration_seconds: true,
   item_tags: {
     select: { tag_id: true },
   },
@@ -72,6 +83,7 @@ type StoredItem = {
   link_preview: unknown;
   created_at: Date;
   last_touched_at: Date;
+  duration_seconds: number | null;
   item_tags: { tag_id: string }[];
 };
 
@@ -119,6 +131,7 @@ function toItem(row: StoredItem, user: { timezone: string; day_start_time: numbe
     created_at: row.created_at.toISOString(),
     last_touched_at: row.last_touched_at.toISOString(),
     local_date: localDate,
+    duration_seconds: row.duration_seconds,
   };
 }
 
@@ -460,4 +473,181 @@ export async function deleteItem(req: Request, res: Response) {
   });
 
   res.status(204).end();
+}
+
+type VoiceKind = {
+  extension: "webm" | "ogg";
+  contentType: "audio/webm" | "audio/ogg";
+};
+
+// Chrome sends audio/webm;codecs=opus. The part before ";" is the type we store.
+function voiceKind(mime: string): VoiceKind | null {
+  const base = mime.split(";")[0]?.trim().toLowerCase() ?? "";
+  if (base === "audio/webm") {
+    return { extension: "webm", contentType: "audio/webm" };
+  }
+  if (base === "audio/ogg") {
+    return { extension: "ogg", contentType: "audio/ogg" };
+  }
+  return null;
+}
+
+function contentTypeFromKey(key: string): VoiceKind["contentType"] | null {
+  if (key.endsWith(".webm")) {
+    return "audio/webm";
+  }
+  if (key.endsWith(".ogg")) {
+    return "audio/ogg";
+  }
+  return null;
+}
+
+type VoiceFile = {
+  buffer: Buffer;
+  size: number;
+  mimetype: string;
+};
+
+function readVoiceFile(req: Request): VoiceFile | undefined {
+  // multer puts the audio part on req.file. Express does not know that field.
+  const withFile = req as Request & { file?: VoiceFile };
+  const file = withFile.file;
+  if (!file || !Buffer.isBuffer(file.buffer) || typeof file.mimetype !== "string") {
+    return undefined;
+  }
+  return file;
+}
+
+const voiceUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: VOICE_MAX_BYTES,
+    files: 1,
+  },
+}).single("audio");
+
+export function postVoiceItem(req: Request, res: Response) {
+  voiceUpload(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+      res.status(400).json({ error: VOICE_TOO_BIG });
+      return;
+    }
+    if (error) {
+      res.status(400).json({ error: VOICE_BAD });
+      return;
+    }
+    void createVoiceItem(req, res).catch((failure: unknown) => {
+      console.error(failure);
+      if (!res.headersSent) {
+        res.status(500).json({ error: SERVER_ERROR });
+      }
+    });
+  });
+}
+
+async function createVoiceItem(req: Request, res: Response) {
+  const file = readVoiceFile(req);
+  if (!file || file.size === 0 || file.buffer.length === 0) {
+    res.status(400).json({ error: VOICE_EMPTY });
+    return;
+  }
+  // Reject the whole clip. Do not keep a 15 MB piece of a larger upload.
+  if (file.size > VOICE_MAX_BYTES || file.buffer.length > VOICE_MAX_BYTES) {
+    res.status(400).json({ error: VOICE_TOO_BIG });
+    return;
+  }
+
+  const kind = voiceKind(file.mimetype);
+  if (!kind) {
+    res.status(400).json({ error: VOICE_TYPE });
+    return;
+  }
+
+  const duration = voiceDurationSchema.safeParse(req.body.duration_seconds);
+  if (!duration.success) {
+    res.status(400).json({ error: firstIssueMessage(duration.error.issues) });
+    return;
+  }
+
+  const user = readSignedInUser(res);
+  // The id is chosen here so the object key can be stored in the same insert.
+  const id = randomUUID();
+  const key = `${user.id}/${id}.${kind.extension}`;
+  const now = new Date();
+  await prisma.item.create({
+    data: {
+      id,
+      user_id: user.id,
+      type: "voice",
+      content: key,
+      status: "inbox",
+      category_id: null,
+      duration_seconds: duration.data,
+      created_at: now,
+      last_touched_at: now,
+    },
+  });
+
+  try {
+    await putPrivateObject(key, file.buffer, kind.contentType);
+  } catch {
+    await prisma.item.delete({ where: { id } }).catch(() => undefined);
+    res.status(500).json({ error: SERVER_ERROR });
+    return;
+  }
+
+  const saved = await prisma.item.findFirst({
+    where: { id, user_id: user.id },
+    select: itemSelect,
+  });
+  if (!saved) {
+    res.status(500).json({ error: SERVER_ERROR });
+    return;
+  }
+
+  res.status(201).json(toItem(saved, user));
+}
+
+export async function streamItemFile(req: Request, res: Response) {
+  const user = readSignedInUser(res);
+  const id = paramId(req);
+  if (!id) {
+    res.status(404).json({ error: NOT_FOUND });
+    return;
+  }
+
+  // Same ownership check as the other item reads. This read does not touch the row.
+  const item = await prisma.item.findFirst({
+    where: { id, user_id: user.id },
+    select: { type: true, content: true },
+  });
+  if (!item || item.type !== "voice") {
+    res.status(404).json({ error: NOT_FOUND });
+    return;
+  }
+
+  const contentType = contentTypeFromKey(item.content);
+  if (!contentType) {
+    res.status(404).json({ error: NOT_FOUND });
+    return;
+  }
+
+  let body: Awaited<ReturnType<typeof openPrivateObject>>;
+  try {
+    body = await openPrivateObject(item.content);
+  } catch {
+    res.status(500).json({ error: SERVER_ERROR });
+    return;
+  }
+
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Cache-Control", "private, no-store");
+  body.on("error", () => {
+    if (!res.headersSent) {
+      res.status(500).json({ error: SERVER_ERROR });
+      return;
+    }
+    res.destroy();
+  });
+  body.pipe(res);
 }

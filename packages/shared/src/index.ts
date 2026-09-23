@@ -14,6 +14,9 @@ export {
   textContentSchema,
   TEXT_MAX_LENGTH,
   updateItemSchema,
+  VOICE_MAX_BYTES,
+  VOICE_MAX_SECONDS,
+  voiceDurationSchema,
 } from "./items.js";
 export type {
   CreateItemInput,

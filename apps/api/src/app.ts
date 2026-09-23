@@ -7,7 +7,7 @@ import {
   listCategories,
   updateCategory,
 } from "./category-routes.js";
-import { createItem, deleteItem, getItem, listItems, updateItem } from "./item-routes.js";
+import { createItem, deleteItem, getItem, listItems, postVoiceItem, streamItemFile, updateItem } from "./item-routes.js";
 import { requireUser } from "./require-user.js";
 import { createTag, deleteTag, listTags, updateTag } from "./tag-routes.js";
 
@@ -39,6 +39,8 @@ app.delete("/tags/:id", requireUser, deleteTag);
 
 app.get("/items", requireUser, listItems);
 app.post("/items", requireUser, createItem);
+app.post("/items/voice", requireUser, postVoiceItem);
+app.get("/items/:id/file", requireUser, streamItemFile);
 app.get("/items/:id", requireUser, getItem);
 app.patch("/items/:id", requireUser, updateItem);
 app.delete("/items/:id", requireUser, deleteItem);

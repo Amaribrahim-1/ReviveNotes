@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { api, apiError } from "@/lib/api";
+import VoiceCapture from "./VoiceCapture";
 
 const fieldClass =
   "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
@@ -15,6 +16,7 @@ const buttonClass =
 const captureTypes = [
   { id: "text", label: "نص" },
   { id: "link", label: "رابط" },
+  { id: "voice", label: "صوت" },
 ] as const;
 
 type CaptureType = (typeof captureTypes)[number]["id"];
@@ -38,6 +40,9 @@ export default function CaptureForm() {
   }
 
   async function onSubmit(values: CaptureFields) {
+    if (selectedType === "voice") {
+      return;
+    }
     setError(null);
     const parsed = createItemSchema.safeParse({
       type: selectedType,
@@ -102,6 +107,9 @@ export default function CaptureForm() {
         </div>
       );
       break;
+    case "voice":
+      field = null;
+      break;
   }
 
   return (
@@ -123,15 +131,21 @@ export default function CaptureForm() {
           );
         })}
       </div>
-      <div key={selectedType}>{field}</div>
-      {error ? (
-        <p className="text-red-700" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-        {form.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
-      </button>
+      {selectedType === "voice" ? (
+        <VoiceCapture />
+      ) : (
+        <>
+          <div key={selectedType}>{field}</div>
+          {error ? (
+            <p className="text-red-700" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
+            {form.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
+          </button>
+        </>
+      )}
     </form>
   );
 }
