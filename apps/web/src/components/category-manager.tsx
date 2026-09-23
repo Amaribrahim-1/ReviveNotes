@@ -13,13 +13,15 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import { categoryColorClass, categoryColorLabel, knownCategoryColor } from "@/lib/category-colors";
-
-const fieldClass =
-  "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
-const buttonClass =
-  "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
-const quietButtonClass =
-  "rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
+import {
+  alertClass,
+  buttonClass,
+  buttonSecondaryClass,
+  fieldClass,
+  labelClass,
+  mutedClass,
+  surfacePanelClass,
+} from "@/lib/ui-classes";
 
 type ColorSwatchesProps = {
   idPrefix: string;
@@ -32,7 +34,7 @@ function ColorSwatches({ idPrefix, value, onChange }: ColorSwatchesProps) {
 
   return (
     <div>
-      <p className="mb-2 text-sm font-medium" id={labelId}>
+      <p className={labelClass} id={labelId}>
         اللون
       </p>
       <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-2">
@@ -46,7 +48,7 @@ function ColorSwatches({ idPrefix, value, onChange }: ColorSwatchesProps) {
               aria-checked={selected}
               aria-label={categoryColorLabel[color]}
               onClick={() => onChange(color)}
-              className={`h-11 w-11 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 ${categoryColorClass[color]} ${selected ? "ring-2 ring-neutral-900 ring-offset-2" : ""}`}
+              className={`h-11 w-11 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent ${categoryColorClass[color]} ${selected ? "ring-2 ring-rn-ink ring-offset-2 ring-offset-rn-surface" : ""}`}
             />
           );
         })}
@@ -193,11 +195,11 @@ export function CategoryManager() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">التصنيفات</h2>
+    <section className={`${surfacePanelClass} flex flex-col gap-4`}>
+      <h2 className="text-xl font-semibold tracking-tight">التصنيفات</h2>
       <form className="flex flex-col gap-4" noValidate onSubmit={form.handleSubmit(onCreate)}>
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="new-category-name">
+          <label className={labelClass} htmlFor="new-category-name">
             الاسم
           </label>
           <input
@@ -219,26 +221,28 @@ export function CategoryManager() {
       </form>
 
       {formError ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {formError}
         </p>
       ) : null}
 
-      {categories.isPending ? <p>بنحمّل التصنيفات...</p> : null}
+      {categories.isPending ? <p className={mutedClass}>بنحمّل التصنيفات...</p> : null}
       {categories.isError ? <p role="alert">{categories.error.message}</p> : null}
 
-      {categories.data && categories.data.length === 0 ? <p>لسه مفيش تصنيفات.</p> : null}
+      {categories.data && categories.data.length === 0 ? (
+        <p className={mutedClass}>لسه مفيش تصنيفات.</p>
+      ) : null}
 
       {categories.data && categories.data.length > 0 ? (
         <ul className="flex flex-col gap-3">
           {categories.data.map((category) => {
             const color = knownCategoryColor(category.color);
             return (
-              <li key={category.id} className="flex flex-col gap-3 rounded border border-neutral-300 p-3">
+              <li key={category.id} className="flex flex-col gap-3 rounded-xl border border-rn-border bg-rn-surface p-3">
                 {editingId === category.id ? (
                   <form className="flex flex-col gap-3" noValidate onSubmit={editForm.handleSubmit(onRename)}>
                     <div>
-                      <label className="mb-1 block text-sm font-medium" htmlFor="edit-category-name">
+                      <label className={labelClass} htmlFor="edit-category-name">
                         الاسم
                       </label>
                       <input
@@ -258,7 +262,7 @@ export function CategoryManager() {
                       <button type="submit" disabled={editForm.formState.isSubmitting} className={buttonClass}>
                         {editForm.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
                       </button>
-                      <button type="button" onClick={() => setEditingId(null)} className={quietButtonClass}>
+                      <button type="button" onClick={() => setEditingId(null)} className={buttonSecondaryClass}>
                         إلغاء
                       </button>
                     </div>
@@ -267,17 +271,17 @@ export function CategoryManager() {
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-block h-4 w-4 rounded-full ${color ? categoryColorClass[color] : "bg-neutral-300"}`}
+                        className={`inline-block h-4 w-4 rounded-full ${color ? categoryColorClass[color] : "bg-rn-border"}`}
                       />
                       <span>{category.name}</span>
-                      {color ? <span className="text-sm text-neutral-600">{categoryColorLabel[color]}</span> : null}
+                      {color ? <span className="text-sm text-rn-muted">{categoryColorLabel[color]}</span> : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => startEdit(category)} className={quietButtonClass}>
+                      <button type="button" onClick={() => startEdit(category)} className={buttonSecondaryClass}>
                         تعديل
                       </button>
                       {confirmId === category.id ? null : (
-                        <button type="button" onClick={() => setConfirmId(category.id)} className={quietButtonClass}>
+                        <button type="button" onClick={() => setConfirmId(category.id)} className={buttonSecondaryClass}>
                           حذف
                         </button>
                       )}
@@ -294,7 +298,7 @@ export function CategoryManager() {
                           >
                             {deleting ? "بنحذف..." : "تأكيد الحذف"}
                           </button>
-                          <button type="button" onClick={() => setConfirmId(null)} className={quietButtonClass}>
+                          <button type="button" onClick={() => setConfirmId(null)} className={buttonSecondaryClass}>
                             إلغاء
                           </button>
                         </div>

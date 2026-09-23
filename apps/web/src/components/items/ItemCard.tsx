@@ -1,5 +1,6 @@
 import type { Item } from "@revivenotes/shared";
 import Link from "next/link";
+import { cardClass, mutedClass } from "@/lib/ui-classes";
 import { formatVoiceDuration } from "./format-voice-duration";
 import ItemImage from "./ItemImage";
 import LinkPreviewCard from "./LinkPreviewCard";
@@ -12,11 +13,7 @@ type ItemCardProps = {
 export default function ItemCard({ item }: ItemCardProps) {
   if (item.type === "image") {
     return (
-      <Link
-        href={`/items/${item.id}`}
-        aria-label="فتح صورة الملاحظة"
-        className="block rounded border border-amber-200 bg-amber-50 p-4 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-      >
+      <Link href={`/items/${item.id}`} aria-label="فتح صورة الملاحظة" className={`block ${cardClass}`}>
         <ItemImage itemId={item.id} size="thumb" />
         {cardNote(item.note)}
       </Link>
@@ -25,13 +22,13 @@ export default function ItemCard({ item }: ItemCardProps) {
 
   if (item.type === "voice") {
     return (
-      <article className="flex items-center justify-between gap-3 rounded border border-amber-200 bg-amber-50 p-4 shadow-sm">
+      <article className={`flex items-center justify-between gap-3 ${cardClass}`}>
         <Link
           href={`/items/${item.id}`}
           aria-label={`فتح الملاحظة، المدة ${formatVoiceDuration(item.duration_seconds)}`}
-          className="min-w-0 flex-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          className="min-w-0 flex-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent"
         >
-          <p dir="ltr" className="text-lg">
+          <p dir="ltr" className="text-lg font-medium tabular-nums">
             {formatVoiceDuration(item.duration_seconds)}
           </p>
           {cardNote(item.note)}
@@ -48,12 +45,15 @@ export default function ItemCard({ item }: ItemCardProps) {
     <Link
       href={`/items/${item.id}`}
       aria-label={preview && !previewText ? item.content : undefined}
-      className="block rounded border border-amber-200 bg-amber-50 p-4 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+      className={`block ${cardClass}`}
     >
       {preview ? (
         <LinkPreviewCard preview={preview} />
       ) : (
-        <p className={item.type === "link" ? "break-all" : "break-words"} dir={item.type === "link" ? "ltr" : undefined}>
+        <p
+          className={item.type === "link" ? "break-all" : "break-words leading-relaxed"}
+          dir={item.type === "link" ? "ltr" : undefined}
+        >
           {cardText(item)}
         </p>
       )}
@@ -77,5 +77,5 @@ function cardNote(note: string | null) {
   if (!note) {
     return null;
   }
-  return <p className="mt-2 break-words">{note.split(/\r?\n/)[0] ?? note}</p>;
+  return <p className={`mt-2 break-words text-sm ${mutedClass}`}>{note.split(/\r?\n/)[0] ?? note}</p>;
 }

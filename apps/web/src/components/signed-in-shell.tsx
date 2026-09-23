@@ -7,7 +7,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import RevivalScreen from "@/components/RevivalScreen";
+import ThemeToggle from "@/components/ThemeToggle";
 import { api } from "@/lib/api";
+import { buttonSecondaryClass, mutedClass, pageClass } from "@/lib/ui-classes";
 
 type SignedInShellProps = {
   children: ReactNode;
@@ -15,9 +17,9 @@ type SignedInShellProps = {
 
 const links = [
   { href: "/inbox", label: "الوارد" },
-  { href: "/items", label: "كل الملاحظات" },
-  { href: "/categories", label: "التصنيفات والوسوم" },
-  { href: "/settings", label: "الإعدادات" },
+  { href: "/items", label: "الكل" },
+  { href: "/categories", label: "تصنيفات" },
+  { href: "/settings", label: "إعدادات" },
 ];
 
 function isNoSession(error: unknown): boolean {
@@ -114,16 +116,16 @@ export function SignedInShell({ children }: SignedInShellProps) {
 
   if (me.isPending) {
     return (
-      <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
-        <p>بنأكد الجلسة...</p>
+      <main className={pageClass}>
+        <p className={mutedClass}>بنأكد الجلسة...</p>
       </main>
     );
   }
 
   if (isNoSession(revival.error)) {
     return (
-      <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
-        <p>بنحوّلك على صفحة الدخول...</p>
+      <main className={pageClass}>
+        <p className={mutedClass}>بنحوّلك على صفحة الدخول...</p>
       </main>
     );
   }
@@ -131,20 +133,16 @@ export function SignedInShell({ children }: SignedInShellProps) {
   if (me.isError || !me.data) {
     if (isNoSession(me.error)) {
       return (
-        <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
-          <p>بنحوّلك على صفحة الدخول...</p>
+        <main className={pageClass}>
+          <p className={mutedClass}>بنحوّلك على صفحة الدخول...</p>
         </main>
       );
     }
 
     return (
-      <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
+      <main className={pageClass}>
         <p>مش قادرين نوصل للسيرفر</p>
-        <button
-          type="button"
-          onClick={() => void me.refetch()}
-          className="w-fit rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-        >
+        <button type="button" onClick={() => void me.refetch()} className={buttonSecondaryClass}>
           حاول تاني
         </button>
       </main>
@@ -154,57 +152,81 @@ export function SignedInShell({ children }: SignedInShellProps) {
   const revivalItems = revival.data?.items ?? [];
   const showRevival = revivalItems.length > 0;
   const waitingForRevival = revival.isPending || revival.isError || !revival.data;
+  const hideNav = showRevival || waitingForRevival;
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-10">
-      <header className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-4">
-          <p>{me.data.email}</p>
-          <button
-            type="button"
-            onClick={onLogout}
-            disabled={leaving}
-            className="rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60"
-          >
-            خروج
-          </button>
+    <main className={pageClass}>
+      <header className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-lg font-semibold tracking-tight text-rn-ink">ريفايف نوتس</p>
+            <p className={`truncate text-sm ${mutedClass}`}>{me.data.email}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={onLogout}
+              disabled={leaving}
+              className={buttonSecondaryClass}
+            >
+              خروج
+            </button>
+          </div>
         </div>
         {progress.isSuccess ? (
-          <p>
-            خلّصت النهارده <span dir="ltr">{progress.data.cleared}</span>
+          <p className={`rounded-xl border border-rn-border bg-rn-surface/70 px-3 py-2 text-sm ${mutedClass}`}>
+            خلّصت النهارده{" "}
+            <span dir="ltr" className="font-semibold text-rn-accent">
+              {progress.data.cleared}
+            </span>
           </p>
         ) : null}
-        {progress.isError && !isNoSession(progress.error) ? <p>مش قادرين نجيب العدّاد</p> : null}
-        {showRevival || waitingForRevival ? null : (
-          <nav className="flex flex-wrap gap-4" aria-label="التنقل">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={pathname === link.href ? "page" : undefined}
-                className="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-              >
-                {link.label}
-              </Link>
-            ))}
+        {progress.isError && !isNoSession(progress.error) ? (
+          <p className={mutedClass}>مش قادرين نجيب العدّاد</p>
+        ) : null}
+        {hideNav ? null : (
+          <nav
+            className="fixed inset-x-0 bottom-0 z-20 border-t border-rn-border bg-rn-surface/95 px-2 py-2 backdrop-blur-md md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none"
+            aria-label="التنقل"
+          >
+            <div className="mx-auto flex max-w-xl gap-1 md:flex-wrap md:gap-2">
+              {links.map((link) => {
+                const current = pathname === link.href || pathname.startsWith(`${link.href}/`);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={current ? "page" : undefined}
+                    className={`flex-1 rounded-xl px-3 py-2.5 text-center text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent md:flex-none ${
+                      current
+                        ? "bg-rn-accent text-rn-accent-ink"
+                        : "text-rn-muted hover:bg-rn-accent-soft hover:text-rn-ink"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
         )}
       </header>
-      {revival.isPending ? <p>بنشوف الملاحظات القديمة...</p> : null}
+      {revival.isPending ? <p className={mutedClass}>بنشوف الملاحظات القديمة...</p> : null}
       {revival.isError ? (
         <div className="flex flex-col gap-3">
           <p>مش قادرين نجيب الملاحظات القديمة</p>
           <button
             type="button"
             onClick={() => void revival.refetch()}
-            className="w-fit rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className={`w-fit ${buttonSecondaryClass}`}
           >
             حاول تاني
           </button>
         </div>
       ) : null}
       {showRevival ? <RevivalScreen items={revivalItems} /> : null}
-      {showRevival || waitingForRevival ? null : children}
+      {hideNav ? null : children}
     </main>
   );
 }

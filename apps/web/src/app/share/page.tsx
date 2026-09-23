@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import ThemeToggle from "@/components/ThemeToggle";
 import { saveSharedUrl, type SharedUrlResult } from "@/lib/pending-share";
+import { alertClass, authPageClass, buttonClass, linkClass, mutedClass, titleClass } from "@/lib/ui-classes";
 
 type ShareView = "working" | "ignored" | "invalid" | "error";
-
-const linkClass =
-  "underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
-const buttonClass =
-  "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
 
 async function openSharedLink(): Promise<SharedUrlResult> {
   const params = new URLSearchParams(window.location.search);
@@ -25,18 +22,29 @@ export default function SharePage() {
   }, []);
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-4 px-6 py-10">
-      <h1 className="text-3xl font-semibold">مشاركة رابط</h1>
-      {view === "working" ? <p aria-live="polite">بنحفظ الرابط...</p> : null}
+    <main className={authPageClass}>
+      <div className="flex items-start justify-between gap-3">
+        <h1 className={titleClass}>مشاركة رابط</h1>
+        <ThemeToggle />
+      </div>
+      {view === "working" ? (
+        <p aria-live="polite" className={mutedClass}>
+          بنحفظ الرابط...
+        </p>
+      ) : null}
       {view === "ignored" ? (
         <p role="status">مفيش رابط. النص والصورة مش بيتسجلوا.</p>
       ) : null}
       {view === "invalid" ? (
-        <p role="alert">الرابط لازم يبدأ بـ http أو https.</p>
+        <p role="alert" className={alertClass}>
+          الرابط لازم يبدأ بـ http أو https.
+        </p>
       ) : null}
       {view === "error" ? (
         <>
-          <p role="alert">مش قدرنا نحفظ الرابط.</p>
+          <p role="alert" className={alertClass}>
+            مش قدرنا نحفظ الرابط.
+          </p>
           <button type="button" className={buttonClass} onClick={() => void runShare(setView)}>
             حاول تاني
           </button>

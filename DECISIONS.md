@@ -130,4 +130,8 @@ Saving a changed note is a touch. Opening the item is not. Changing the note doe
 
 ## In-app toasts
 
-Save and delete feedback uses `sonner` toasts: loading while the request runs, then success or error. `react-hot-toast` was rejected because `sonner` is smaller to wire for App Router and already ships RTL. Inline form errors stay for validation next to the fields. A full UI redesign was deferred.
+Save and delete feedback uses `sonner` toasts: loading while the request runs, then success or error. `react-hot-toast` was rejected because `sonner` is smaller to wire for App Router and already ships RTL. Inline form errors stay for validation next to the fields.
+
+## Web visual theme
+
+The signed-in app uses a paper-alive light look (soft sage ground, charcoal ink, teal accent) and a night-paper dark look. Both share the same CSS variables on `:root` and `.dark`. A class-based `dark` variant drives Tailwind. Preference lives in `localStorage` under `rn-theme`, owned by a small Zustand store, because theme is UI state only. A tiny script in the document head applies the class before paint so the first frame does not flash. `next-themes` was rejected: the app already has Zustand, and one storage key is enough. Forced dark-only was rejected so the sticky-note feel stays the default.

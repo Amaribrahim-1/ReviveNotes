@@ -1,4 +1,10 @@
 import { ITEM_STATUSES, type Item, type ItemStatus, type UpdateItemInput } from "@revivenotes/shared";
+import {
+  labelClass,
+  segmentBaseClass,
+  segmentIdleClass,
+  segmentSelectedClass,
+} from "@/lib/ui-classes";
 
 const statusLabel: Record<ItemStatus, string> = {
   inbox: "الوارد",
@@ -6,9 +12,6 @@ const statusLabel: Record<ItemStatus, string> = {
   done: "خلصت",
   archived: "أرشيف",
 };
-
-const buttonClass =
-  "rounded px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
 
 type ItemStatusControlsProps = {
   item: Item;
@@ -19,7 +22,7 @@ type ItemStatusControlsProps = {
 export default function ItemStatusControls({ item, pending, onSave }: ItemStatusControlsProps) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium" id="item-status-label">
+      <p className={labelClass} id="item-status-label">
         الحالة
       </p>
       <div role="group" aria-labelledby="item-status-label" className="flex flex-wrap gap-2">
@@ -37,7 +40,7 @@ export default function ItemStatusControls({ item, pending, onSave }: ItemStatus
                 }
                 onSave({ status });
               }}
-              className={`${buttonClass} ${selected ? "bg-neutral-900 text-white" : "border border-neutral-300"}`}
+              className={`${segmentBaseClass} ${selected ? segmentSelectedClass : segmentIdleClass}`}
             >
               {statusLabel[status]}
             </button>

@@ -2,9 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, apiError } from "@/lib/api";
-
-const buttonClass =
-  "rounded border border-neutral-300 bg-white px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
+import { alertClass, buttonSecondaryClass } from "@/lib/ui-classes";
 
 type VoicePlayButtonProps = {
   itemId: string;
@@ -80,12 +78,12 @@ export default function VoicePlayButton({ itemId }: VoicePlayButtonProps) {
         onClick={() => {
           void toggle();
         }}
-        className={buttonClass}
+        className={buttonSecondaryClass}
       >
         {loading ? "بنحمّل..." : playing ? "إيقاف" : "تشغيل"}
       </button>
       {error ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {error}
         </p>
       ) : null}

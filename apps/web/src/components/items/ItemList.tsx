@@ -8,10 +8,8 @@ import {
 } from "@revivenotes/shared";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
+import { alertClass, buttonSecondaryClass, mutedClass } from "@/lib/ui-classes";
 import ItemCard from "./ItemCard";
-
-const buttonClass =
-  "rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
 
 type ItemListProps = {
   status?: ItemStatus;
@@ -62,12 +60,12 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
   });
 
   if (items.isPending) {
-    return <p>بنحمّل الملاحظات...</p>;
+    return <p className={mutedClass}>بنحمّل الملاحظات...</p>;
   }
 
   if (items.isError) {
     return (
-      <p className="text-red-700" role="alert">
+      <p className={alertClass} role="alert">
         {items.error instanceof Error ? items.error.message : "حصل خطأ. حاول تاني."}
       </p>
     );
@@ -78,7 +76,7 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
   return (
     <div className="flex flex-col gap-4">
       {rows.length === 0 ? (
-        <p>{emptyText}</p>
+        <p className={mutedClass}>{emptyText}</p>
       ) : (
         <ul className="flex list-none flex-col gap-3 p-0">
           {rows.map((item, index) => {
@@ -87,7 +85,7 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
             return (
               <li key={item.id} className="flex flex-col gap-2">
                 {showDayLabel ? (
-                  <h2 className="text-sm font-medium text-neutral-700">{dayLabel(item.local_date)}</h2>
+                  <h2 className={`text-sm font-medium ${mutedClass}`}>{dayLabel(item.local_date)}</h2>
                 ) : null}
                 <ItemCard item={item} />
               </li>
@@ -102,7 +100,7 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
             void items.fetchNextPage();
           }}
           disabled={items.isFetchingNextPage}
-          className={buttonClass}
+          className={buttonSecondaryClass}
         >
           {items.isFetchingNextPage ? "بنحمّل..." : "اعرض المزيد"}
         </button>

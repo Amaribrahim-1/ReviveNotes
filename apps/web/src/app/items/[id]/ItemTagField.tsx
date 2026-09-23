@@ -1,6 +1,7 @@
 import type { Item, Tag, UpdateItemInput } from "@revivenotes/shared";
 import { useQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
+import { alertClass, labelClass, mutedClass } from "@/lib/ui-classes";
 
 type ItemTagFieldProps = {
   item: Item;
@@ -29,14 +30,14 @@ export default function ItemTagField({ item, pending, onSave }: ItemTagFieldProp
 
   return (
     <fieldset className="flex flex-col gap-1" disabled={pending}>
-      <legend className="mb-1 text-sm font-medium">الوسوم</legend>
-      {tags.isPending ? <p>بنحمّل الوسوم...</p> : null}
+      <legend className={labelClass}>الوسوم</legend>
+      {tags.isPending ? <p className={mutedClass}>بنحمّل الوسوم...</p> : null}
       {tags.isError ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {tags.error instanceof Error ? tags.error.message : "حصل خطأ. حاول تاني."}
         </p>
       ) : null}
-      {tags.data && tags.data.length === 0 ? <p>لسه مفيش وسوم.</p> : null}
+      {tags.data && tags.data.length === 0 ? <p className={mutedClass}>لسه مفيش وسوم.</p> : null}
       {tags.data?.map((tag) => (
         <label key={tag.id} className="flex items-center gap-2 py-1">
           <input

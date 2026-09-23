@@ -11,6 +11,12 @@ import ItemImage from "@/components/items/ItemImage";
 import LinkPreviewCard from "@/components/items/LinkPreviewCard";
 import VoicePlayButton from "@/components/items/VoicePlayButton";
 import { api, apiError } from "@/lib/api";
+import {
+  alertClass,
+  cardClass,
+  linkClass,
+  mutedClass,
+} from "@/lib/ui-classes";
 import ItemCategoryField from "./ItemCategoryField";
 import ItemContentForm from "./ItemContentForm";
 import ItemDeleteButton from "./ItemDeleteButton";
@@ -103,12 +109,12 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   }
 
   if (item.isPending) {
-    return <p>بنحمّل الملاحظة...</p>;
+    return <p className={mutedClass}>بنحمّل الملاحظة...</p>;
   }
 
   if (item.isError || !item.data) {
     return (
-      <p className="text-red-700" role="alert">
+      <p className={alertClass} role="alert">
         {item.error instanceof Error ? item.error.message : "حصل خطأ. حاول تاني."}
       </p>
     );
@@ -145,7 +151,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   } else if (item.data.type === "voice") {
     body = (
       <div className="flex items-center justify-between gap-3">
-        <p dir="ltr" className="text-lg">
+        <p dir="ltr" className="text-lg font-medium tabular-nums">
           {formatVoiceDuration(item.data.duration_seconds)}
         </p>
         <VoicePlayButton itemId={item.data.id} />
@@ -158,7 +164,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
   const showNote = item.data.type === "link" || item.data.type === "image" || item.data.type === "voice";
 
   return (
-    <article className="flex flex-col gap-6 rounded border border-amber-200 bg-amber-50 p-4">
+    <article className={`flex flex-col gap-6 ${cardClass}`}>
       {body}
       {showNote ? (
         <ItemNoteForm
@@ -177,7 +183,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
         />
       ) : null}
       {error ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {error}
         </p>
       ) : null}
@@ -223,7 +229,7 @@ function linkBody(content: string): ReactNode {
       target="_blank"
       rel="noreferrer noopener"
       dir="ltr"
-      className="break-all underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+      className={`break-all ${linkClass}`}
     >
       {content}
     </a>

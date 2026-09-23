@@ -5,8 +5,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import ThemeToggle from "@/components/ThemeToggle";
 import { api, apiError } from "@/lib/api";
 import { createRememberedShare, hasRememberedShare } from "@/lib/pending-share";
+import {
+  alertClass,
+  authPageClass,
+  buttonClass,
+  fieldClass,
+  labelClass,
+  linkClass,
+  mutedClass,
+  surfacePanelClass,
+  titleClass,
+} from "@/lib/ui-classes";
 
 type RegisterFields = {
   email: string;
@@ -69,52 +81,60 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-6 py-10">
-      <h1 className="text-3xl font-semibold">حساب جديد</h1>
-      {holdingShare ? <p role="status">فيه رابط مستني. هيتحفظ في الوارد بعد التسجيل.</p> : null}
-      <form className="flex flex-col gap-4" method="post" noValidate onSubmit={form.handleSubmit(onSubmit)}>
+    <main className={authPageClass}>
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="register-email">
+          <p className={`mb-1 text-sm ${mutedClass}`}>ريفايف نوتس</p>
+          <h1 className={titleClass}>حساب جديد</h1>
+        </div>
+        <ThemeToggle />
+      </div>
+      {holdingShare ? (
+        <p role="status" className={`${surfacePanelClass} text-sm`}>
+          فيه رابط مستني. هيتحفظ في الوارد بعد التسجيل.
+        </p>
+      ) : null}
+      <form
+        className={`${surfacePanelClass} flex flex-col gap-4`}
+        method="post"
+        noValidate
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
+        <div>
+          <label className={labelClass} htmlFor="register-email">
             البريد
           </label>
           <input
             id="register-email"
             type="email"
             autoComplete="email"
-            className="w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className={fieldClass}
             {...form.register("email")}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="register-password">
+          <label className={labelClass} htmlFor="register-password">
             كلمة السر
           </label>
           <input
             id="register-password"
             type="password"
             autoComplete="new-password"
-            className="w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className={fieldClass}
             {...form.register("password")}
           />
         </div>
         {error ? (
-          <p className="text-red-700" role="alert">
+          <p className={alertClass} role="alert">
             {error}
           </p>
         ) : null}
-        <button
-          type="submit"
-          disabled={form.formState.isSubmitting}
-          className="rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60"
-        >
+        <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
           {form.formState.isSubmitting ? "بنسجل..." : "تسجيل"}
         </button>
       </form>
-      <p>
-        <Link
-          href="/login"
-          className="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-        >
+      <p className={mutedClass}>
+        <Link href="/login" className={linkClass}>
           عندك حساب؟ ادخل
         </Link>
       </p>

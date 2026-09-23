@@ -6,13 +6,15 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
-
-const fieldClass =
-  "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
-const buttonClass =
-  "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
-const quietButtonClass =
-  "rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
+import {
+  alertClass,
+  buttonClass,
+  buttonSecondaryClass,
+  fieldClass,
+  labelClass,
+  mutedClass,
+  surfacePanelClass,
+} from "@/lib/ui-classes";
 
 export function TagManager() {
   const queryClient = useQueryClient();
@@ -148,11 +150,11 @@ export function TagManager() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">الوسوم</h2>
+    <section className={`${surfacePanelClass} flex flex-col gap-4`}>
+      <h2 className="text-xl font-semibold tracking-tight">الوسوم</h2>
       <form className="flex flex-col gap-4" noValidate onSubmit={form.handleSubmit(onCreate)}>
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="new-tag-name">
+          <label className={labelClass} htmlFor="new-tag-name">
             الاسم
           </label>
           <input id="new-tag-name" type="text" autoComplete="off" className={fieldClass} {...form.register("name")} />
@@ -163,23 +165,23 @@ export function TagManager() {
       </form>
 
       {formError ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {formError}
         </p>
       ) : null}
 
-      {tags.isPending ? <p>بنحمّل الوسوم...</p> : null}
+      {tags.isPending ? <p className={mutedClass}>بنحمّل الوسوم...</p> : null}
       {tags.isError ? <p role="alert">{tags.error.message}</p> : null}
-      {tags.data && tags.data.length === 0 ? <p>لسه مفيش وسوم.</p> : null}
+      {tags.data && tags.data.length === 0 ? <p className={mutedClass}>لسه مفيش وسوم.</p> : null}
 
       {tags.data && tags.data.length > 0 ? (
         <ul className="flex flex-col gap-3">
           {tags.data.map((tag) => (
-            <li key={tag.id} className="flex flex-col gap-3 rounded border border-neutral-300 p-3">
+            <li key={tag.id} className="flex flex-col gap-3 rounded-xl border border-rn-border bg-rn-surface p-3">
               {editingId === tag.id ? (
                 <form className="flex flex-col gap-3" noValidate onSubmit={editForm.handleSubmit(onRename)}>
                   <div>
-                    <label className="mb-1 block text-sm font-medium" htmlFor="edit-tag-name">
+                    <label className={labelClass} htmlFor="edit-tag-name">
                       الاسم
                     </label>
                     <input
@@ -194,7 +196,7 @@ export function TagManager() {
                     <button type="submit" disabled={editForm.formState.isSubmitting} className={buttonClass}>
                       {editForm.formState.isSubmitting ? "بنحفظ..." : "حفظ"}
                     </button>
-                    <button type="button" onClick={() => setEditingId(null)} className={quietButtonClass}>
+                    <button type="button" onClick={() => setEditingId(null)} className={buttonSecondaryClass}>
                       إلغاء
                     </button>
                   </div>
@@ -203,11 +205,11 @@ export function TagManager() {
                 <div className="flex flex-col gap-3">
                   <p>{tag.name}</p>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => startEdit(tag)} className={quietButtonClass}>
+                    <button type="button" onClick={() => startEdit(tag)} className={buttonSecondaryClass}>
                       تعديل
                     </button>
                     {confirmId === tag.id ? null : (
-                      <button type="button" onClick={() => setConfirmId(tag.id)} className={quietButtonClass}>
+                      <button type="button" onClick={() => setConfirmId(tag.id)} className={buttonSecondaryClass}>
                         حذف
                       </button>
                     )}
@@ -224,7 +226,7 @@ export function TagManager() {
                         >
                           {deleting ? "بنحذف..." : "تأكيد الحذف"}
                         </button>
-                        <button type="button" onClick={() => setConfirmId(null)} className={quietButtonClass}>
+                        <button type="button" onClick={() => setConfirmId(null)} className={buttonSecondaryClass}>
                           إلغاء
                         </button>
                       </div>

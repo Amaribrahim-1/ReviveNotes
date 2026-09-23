@@ -1,15 +1,11 @@
-"use client";
+﻿"use client";
 
 import { IMAGE_CONTENT_TYPES, IMAGE_MAX_BYTES, imageContentTypeSchema, TEXT_MAX_LENGTH } from "@revivenotes/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
-
-const fieldClass =
-  "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
-const buttonClass =
-  "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
+import { alertClass, buttonClass, fieldClass, labelClass, mutedClass } from "@/lib/ui-classes";
 
 export default function ImageCapture() {
   const queryClient = useQueryClient();
@@ -88,7 +84,7 @@ export default function ImageCapture() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <label className="mb-1 block text-sm font-medium" htmlFor="capture-image">
+        <label className={labelClass} htmlFor="capture-image">
           الصورة
         </label>
         <input
@@ -105,12 +101,12 @@ export default function ImageCapture() {
         />
       </div>
       {file ? (
-        <p className="break-all text-sm" dir="ltr">
+        <p className={`break-all text-sm ${mutedClass}`} dir="ltr">
           {file.name}
         </p>
       ) : null}
       <div>
-        <label className="mb-1 block text-sm font-medium" htmlFor="capture-image-note">
+        <label className={labelClass} htmlFor="capture-image-note">
           ملاحظة (اختياري)
         </label>
         <textarea
@@ -124,7 +120,7 @@ export default function ImageCapture() {
         />
       </div>
       {error ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {error}
         </p>
       ) : null}

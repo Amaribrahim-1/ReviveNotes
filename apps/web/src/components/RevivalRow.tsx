@@ -6,11 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import ItemCard from "@/components/items/ItemCard";
 import { api, apiError } from "@/lib/api";
-
-const quietButtonClass =
-  "rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
-const dangerButtonClass =
-  "rounded border border-red-700 px-4 py-2 text-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
+import { alertClass, buttonDangerClass, buttonSecondaryClass } from "@/lib/ui-classes";
 
 type RevivalRowProps = {
   item: Item;
@@ -89,12 +85,12 @@ export default function RevivalRow({ item }: RevivalRowProps) {
         <div className="flex flex-col gap-3">
           <p>الحذف نهائي والملاحظة مش هترجع.</p>
           <div className="flex flex-wrap gap-2">
-            <button type="button" className={dangerButtonClass} disabled={pending !== null} onClick={() => void onDelete()}>
+            <button type="button" className={buttonDangerClass} disabled={pending !== null} onClick={() => void onDelete()}>
               {pending === "delete" ? "بنحذف..." : "تأكيد الحذف"}
             </button>
             <button
               type="button"
-              className={quietButtonClass}
+              className={buttonSecondaryClass}
               disabled={pending !== null}
               onClick={() => setConfirming(false)}
             >
@@ -104,16 +100,16 @@ export default function RevivalRow({ item }: RevivalRowProps) {
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={quietButtonClass} disabled={pending !== null} onClick={() => void onRevive()}>
+          <button type="button" className={buttonSecondaryClass} disabled={pending !== null} onClick={() => void onRevive()}>
             {pending === "revive" ? "بنحيي..." : "إحياء"}
           </button>
-          <button type="button" className={dangerButtonClass} disabled={pending !== null} onClick={() => setConfirming(true)}>
+          <button type="button" className={buttonDangerClass} disabled={pending !== null} onClick={() => setConfirming(true)}>
             حذف نهائي
           </button>
         </div>
       )}
       {error ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {error}
         </p>
       ) : null}

@@ -6,11 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
-
-const fieldClass =
-  "w-full rounded border border-neutral-300 bg-white px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
-const buttonClass =
-  "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
+import {
+  alertClass,
+  buttonClass,
+  fieldClass,
+  labelClass,
+  mutedClass,
+  surfacePanelClass,
+} from "@/lib/ui-classes";
 
 const timeZones = Intl.supportedValuesOf("timeZone");
 const dayStartHours = Array.from({ length: 24 }, (_, hour) => hour);
@@ -232,16 +235,21 @@ export default function SettingsForm() {
   }
 
   if (me.isPending || !me.data) {
-    return <p>بنحمّل الإعدادات...</p>;
+    return <p className={mutedClass}>بنحمّل الإعدادات...</p>;
   }
 
   const zones = timeZones.includes(me.data.timezone) ? timeZones : [me.data.timezone, ...timeZones];
 
   return (
     <div className="flex flex-col gap-8">
-      <form className="flex flex-col gap-4" method="post" noValidate onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className={`${surfacePanelClass} flex flex-col gap-4`}
+        method="post"
+        noValidate
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="settings-timezone">
+          <label className={labelClass} htmlFor="settings-timezone">
             المنطقة الزمنية
           </label>
           <select id="settings-timezone" className={fieldClass} {...form.register("timezone")}>
@@ -253,7 +261,7 @@ export default function SettingsForm() {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="settings-day-start">
+          <label className={labelClass} htmlFor="settings-day-start">
             ساعة بداية اليوم
           </label>
           <select
@@ -268,15 +276,15 @@ export default function SettingsForm() {
               </option>
             ))}
           </select>
-          <p id="settings-day-start-hint" className="mt-1 text-sm text-neutral-600">
+          <p id="settings-day-start-hint" className="mt-1 text-sm text-rn-muted">
             0 يعني منتصف الليل.
           </p>
         </div>
-        <section className="flex flex-col gap-3 border-t border-neutral-200 pt-6" aria-labelledby="settings-reminders">
+        <section className="flex flex-col gap-3 border-t border-rn-border pt-6" aria-labelledby="settings-reminders">
           <h2 id="settings-reminders" className="text-xl font-semibold">
             التذكيرات
           </h2>
-          <p className="text-sm text-neutral-600">هيوصلك عدد الملاحظات المفتوحة بس.</p>
+          <p className="text-sm text-rn-muted">هيوصلك عدد الملاحظات المفتوحة بس.</p>
           <label className="flex items-center gap-2" htmlFor="settings-reminders-enabled">
             <input
               id="settings-reminders-enabled"
@@ -296,7 +304,7 @@ export default function SettingsForm() {
               {reminderTimes.map((time, index) => (
                 <div key={index} className="flex items-end gap-2">
                   <div className="flex-1">
-                    <label className="mb-1 block text-sm font-medium" htmlFor={`settings-reminder-time-${index}`}>
+                    <label className={labelClass} htmlFor={`settings-reminder-time-${index}`}>
                       الوقت {index + 1}
                     </label>
                     <input
@@ -325,12 +333,12 @@ export default function SettingsForm() {
               <button type="button" className={buttonClass} onClick={addTime} disabled={reminderTimes.length >= 3}>
                 إضافة وقت
               </button>
-              {braveBrowser ? <p className="text-sm text-neutral-600">{bravePushHint}</p> : null}
+              {braveBrowser ? <p className="text-sm text-rn-muted">{bravePushHint}</p> : null}
               <button type="button" className={buttonClass} onClick={allowNotifications} disabled={pushWorking}>
                 {pushWorking ? "بنفعّل الإشعارات..." : "السماح بالإشعارات"}
               </button>
               {pushError ? (
-                <p className="text-red-700" role="alert">
+                <p className={alertClass} role="alert">
                   {pushError}
                 </p>
               ) : null}
@@ -339,7 +347,7 @@ export default function SettingsForm() {
           ) : null}
         </section>
         {error ? (
-          <p className="text-red-700" role="alert">
+          <p className={alertClass} role="alert">
             {error}
           </p>
         ) : null}

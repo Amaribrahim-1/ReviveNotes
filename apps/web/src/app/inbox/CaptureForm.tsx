@@ -7,13 +7,18 @@ import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
+import {
+  alertClass,
+  buttonClass,
+  fieldClass,
+  labelClass,
+  segmentBaseClass,
+  segmentIdleClass,
+  segmentSelectedClass,
+  surfacePanelClass,
+} from "@/lib/ui-classes";
 import ImageCapture from "./ImageCapture";
 import VoiceCapture from "./VoiceCapture";
-
-const fieldClass =
-  "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
-const buttonClass =
-  "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
 
 const captureTypes = [
   { id: "text", label: "نص" },
@@ -92,7 +97,7 @@ export default function CaptureForm() {
     case "text":
       field = (
         <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="capture-text">
+          <label className={labelClass} htmlFor="capture-text">
             الملاحظة
           </label>
           <textarea
@@ -109,7 +114,7 @@ export default function CaptureForm() {
       field = (
         <>
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="capture-link">
+            <label className={labelClass} htmlFor="capture-link">
               الرابط
             </label>
             <input
@@ -123,7 +128,7 @@ export default function CaptureForm() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="capture-link-note">
+            <label className={labelClass} htmlFor="capture-link-note">
               ملاحظة (اختياري)
             </label>
             <textarea
@@ -144,8 +149,12 @@ export default function CaptureForm() {
   }
 
   return (
-    <form className="flex flex-col gap-4" noValidate onSubmit={form.handleSubmit(onSubmit)}>
-      <div role="radiogroup" aria-label="النوع" className="flex gap-2">
+    <form
+      className={`${surfacePanelClass} flex flex-col gap-4`}
+      noValidate
+      onSubmit={form.handleSubmit(onSubmit)}
+    >
+      <div role="radiogroup" aria-label="النوع" className="flex flex-wrap gap-2">
         {captureTypes.map((captureType) => {
           const selected = selectedType === captureType.id;
           return (
@@ -155,7 +164,7 @@ export default function CaptureForm() {
               role="radio"
               aria-checked={selected}
               onClick={() => chooseType(captureType.id)}
-              className={`rounded px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 ${selected ? "bg-neutral-900 text-white" : "border border-neutral-300"}`}
+              className={`${segmentBaseClass} ${selected ? segmentSelectedClass : segmentIdleClass}`}
             >
               {captureType.label}
             </button>
@@ -170,7 +179,7 @@ export default function CaptureForm() {
         <>
           <div key={selectedType}>{field}</div>
           {error ? (
-            <p className="text-red-700" role="alert">
+            <p className={alertClass} role="alert">
               {error}
             </p>
           ) : null}

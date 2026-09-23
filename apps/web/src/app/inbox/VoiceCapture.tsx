@@ -5,13 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
+import { alertClass, buttonClass, fieldClass, labelClass } from "@/lib/ui-classes";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
 import { useRecorder } from "./use-recorder";
-
-const fieldClass =
-  "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
-const buttonClass =
-  "rounded bg-neutral-900 px-4 py-2 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-60";
 
 type RecorderMime = "audio/webm" | "audio/ogg";
 
@@ -201,7 +197,7 @@ export default function VoiceCapture() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <label className="mb-1 block text-sm font-medium" htmlFor="capture-voice-note">
+        <label className={labelClass} htmlFor="capture-voice-note">
           ملاحظة (اختياري)
         </label>
         <textarea
@@ -217,7 +213,7 @@ export default function VoiceCapture() {
         المدة <span dir="ltr">{formatVoiceDuration(elapsedSeconds)}</span>
       </p>
       {error ? (
-        <p className="text-red-700" role="alert">
+        <p className={alertClass} role="alert">
           {error}
         </p>
       ) : null}

@@ -3,10 +3,8 @@
 import { ITEM_STATUSES, ITEM_TYPES, type Category, type ItemStatus, type ItemType, type Tag } from "@revivenotes/shared";
 import { useQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
+import { alertClass, fieldClass, labelClass, mutedClass } from "@/lib/ui-classes";
 import { useItemFilters } from "./use-item-filters";
-
-const fieldClass =
-  "w-full rounded border border-neutral-300 px-3 py-2 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
 
 const statusLabel: Record<ItemStatus, string> = {
   inbox: "الوارد",
@@ -73,12 +71,12 @@ export default function ItemFilters() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <label className="mb-1 block text-sm font-medium" htmlFor="filter-category">
+        <label className={labelClass} htmlFor="filter-category">
           التصنيف
         </label>
-        {categories.isPending ? <p>بنحمّل التصنيفات...</p> : null}
+        {categories.isPending ? <p className={mutedClass}>بنحمّل التصنيفات...</p> : null}
         {categories.isError ? (
-          <p className="text-red-700" role="alert">
+          <p className={alertClass} role="alert">
             {categories.error instanceof Error ? categories.error.message : "حصل خطأ. حاول تاني."}
           </p>
         ) : null}
@@ -100,7 +98,7 @@ export default function ItemFilters() {
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium" htmlFor="filter-status">
+        <label className={labelClass} htmlFor="filter-status">
           الحالة
         </label>
         <select
@@ -119,7 +117,7 @@ export default function ItemFilters() {
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium" htmlFor="filter-type">
+        <label className={labelClass} htmlFor="filter-type">
           النوع
         </label>
         <select
@@ -138,14 +136,14 @@ export default function ItemFilters() {
       </div>
 
       <fieldset className="flex flex-col gap-1">
-        <legend className="mb-1 text-sm font-medium">الوسوم</legend>
-        {tags.isPending ? <p>بنحمّل الوسوم...</p> : null}
+        <legend className={labelClass}>الوسوم</legend>
+        {tags.isPending ? <p className={mutedClass}>بنحمّل الوسوم...</p> : null}
         {tags.isError ? (
-          <p className="text-red-700" role="alert">
+          <p className={alertClass} role="alert">
             {tags.error instanceof Error ? tags.error.message : "حصل خطأ. حاول تاني."}
           </p>
         ) : null}
-        {tags.data && tags.data.length === 0 ? <p>لسه مفيش وسوم.</p> : null}
+        {tags.data && tags.data.length === 0 ? <p className={mutedClass}>لسه مفيش وسوم.</p> : null}
         {tags.data?.map((tag) => (
           <label key={tag.id} className="flex items-center gap-2 py-1">
             <input

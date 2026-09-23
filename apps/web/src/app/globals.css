@@ -1,8 +1,66 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-rn-bg: var(--rn-bg);
+  --color-rn-surface: var(--rn-surface);
+  --color-rn-ink: var(--rn-ink);
+  --color-rn-muted: var(--rn-muted);
+  --color-rn-border: var(--rn-border);
+  --color-rn-accent: var(--rn-accent);
+  --color-rn-accent-ink: var(--rn-accent-ink);
+  --color-rn-accent-soft: var(--rn-accent-soft);
+  --color-rn-card: var(--rn-card);
+  --color-rn-card-border: var(--rn-card-border);
+  --color-rn-danger: var(--rn-danger);
+  --font-sans: var(--font-ibm-plex-arabic), "Segoe UI", Tahoma, sans-serif;
+}
+
+/* Paper-alive light theme (default). Soft sage mist, charcoal ink, teal accent. */
+:root {
+  --rn-bg: #e8f0eb;
+  --rn-surface: #f7fbf8;
+  --rn-ink: #18241d;
+  --rn-muted: #5b6e63;
+  --rn-border: #c5d5cb;
+  --rn-accent: #2a6b58;
+  --rn-accent-ink: #f4fbf8;
+  --rn-accent-soft: #d4ebe2;
+  --rn-card: #f4f8f2;
+  --rn-card-border: #b9cfc2;
+  --rn-danger: #b42318;
+  --rn-bg-glow: #d5e8dc;
+}
+
+/* Night-paper dark theme. Deep ink ground, lifted card surface, same accent family. */
+.dark {
+  --rn-bg: #0e1511;
+  --rn-surface: #18211c;
+  --rn-ink: #e7efe9;
+  --rn-muted: #9aada1;
+  --rn-border: #2c3b33;
+  --rn-accent: #4faf92;
+  --rn-accent-ink: #062018;
+  --rn-accent-soft: #1e3a30;
+  --rn-card: #1a2620;
+  --rn-card-border: #334840;
+  --rn-danger: #f97066;
+  --rn-bg-glow: #163028;
+}
+
 body {
   margin: 0;
-  background: #ffffff;
-  color: #171717;
-  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  min-height: 100vh;
+  background-color: var(--rn-bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 100% -10%, var(--rn-bg-glow), transparent 55%),
+    radial-gradient(ellipse 60% 40% at -10% 100%, var(--rn-bg-glow), transparent 50%);
+  color: var(--rn-ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--rn-accent-soft);
+  color: var(--rn-ink);
 }

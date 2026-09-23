@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { api, apiError } from "@/lib/api";
+import { alertClass, mutedClass } from "@/lib/ui-classes";
 
 type ItemImageProps = {
   itemId: string;
@@ -78,17 +79,18 @@ export default function ItemImage({ itemId, size }: ItemImageProps) {
   if (file.isError) {
     const message = file.error instanceof Error ? file.error.message : "مش قادرين نعرض الصورة";
     return (
-      <p className="text-red-700" role="alert">
+      <p className={alertClass} role="alert">
         {message}
       </p>
     );
   }
 
   if (!file.data) {
-    return <p>بنحمّل الصورة...</p>;
+    return <p className={mutedClass}>بنحمّل الصورة...</p>;
   }
 
-  const className = size === "thumb" ? "h-24 w-24 rounded object-cover" : "h-auto w-full object-contain";
+  const className =
+    size === "thumb" ? "h-24 w-24 rounded-xl object-cover" : "h-auto w-full rounded-xl object-contain";
 
   return <img src={urlForItemFile(itemId, file.data)} alt="صورة الملاحظة" className={className} />;
 }
