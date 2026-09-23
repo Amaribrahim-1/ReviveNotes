@@ -16,18 +16,7 @@ export default function LinkPreviewCard({ preview, large = false }: LinkPreviewC
             <p className="line-clamp-2 text-sm leading-relaxed text-neutral-700">{preview.description}</p>
           ) : null}
         </div>
-        {preview.image_url ? (
-          // next/image would download this remote file on the server.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={preview.image_url}
-            alt=""
-            width={640}
-            height={360}
-            referrerPolicy="no-referrer"
-            className="aspect-video w-full bg-neutral-100 object-cover"
-          />
-        ) : null}
+        {preview.image_url ? <LargePreviewImage src={preview.image_url} /> : null}
       </div>
     );
   }
@@ -53,6 +42,38 @@ export default function LinkPreviewCard({ preview, large = false }: LinkPreviewC
           <p className="line-clamp-2 break-words text-sm text-neutral-600">{preview.description}</p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+type LargePreviewImageProps = {
+  src: string;
+};
+
+// Shorts and Reels are tall. object-cover would crop them. The sharp image
+// keeps its shape; a blurred copy fills the leftover space like Telegram.
+function LargePreviewImage({ src }: LargePreviewImageProps) {
+  return (
+    <div className="relative aspect-video w-full overflow-hidden bg-neutral-900">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        width={640}
+        height={360}
+        referrerPolicy="no-referrer"
+        className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        width={640}
+        height={360}
+        referrerPolicy="no-referrer"
+        className="relative z-10 mx-auto h-full w-full object-contain"
+      />
     </div>
   );
 }

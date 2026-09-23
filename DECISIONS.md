@@ -48,9 +48,9 @@ The database keeps the original UTC instant. The list computes `local_date` when
 
 ## Item lifecycle
 
-`PATCH /items/:id` accepts `content`, `status`, `category_id`, and `tag_ids`. `tag_ids` is the full set on that item. The screen sends every selected tag in one save. Adding a single tag through its own route was rejected, because the picker would then need a second request to learn what is already selected.
+`PATCH /items/:id` accepts `content`, `status`, `category_id`, `tag_ids`, and `note`. `tag_ids` is the full set on that item. The screen sends every selected tag in one save. Adding a single tag through its own route was rejected, because the picker would then need a second request to learn what is already selected.
 
-`last_touched_at` moves only when content, status, category, or the tag set actually changes. Sending the same values does not move it. `created_at` stays. Opening the detail page still does not count as a touch.
+`last_touched_at` moves only when content, status, category, the tag set, or the note actually changes. Sending the same values does not move it. `created_at` stays. Opening the detail page still does not count as a touch.
 
 Entering `done` writes one `done` ClearEvent. A second save that is already `done` does not write another. Leaving `done` deletes that item's `done` events whose `created_at` falls in the current user-day from `getUserDayRange`. Older `done` events stay. Comparing UTC calendar dates was rejected, because Cairo midnight is not UTC midnight. Archive writes no event. Permanent delete writes a `deleted` event first, then deletes the item. Postgres sets that event's `item_id` to null, and the event stays.
 
@@ -110,6 +110,8 @@ The fetch allows only `http` and `https`. It waits at most 5 seconds, reads at m
 
 A scraping package was rejected. The four meta tags are read from the HTML `fetch` already downloaded. The check runs before the connection, so a name that changes its address in that gap is not pinned to the first answer.
 
+Shorts and Reels often ship a tall `og:image`. On the detail page the preview frame stays wide (`aspect-video`). The sharp image uses `object-contain` so the full frame stays visible. A blurred, scaled copy sits behind it and fills the leftover sides, like Telegram. Cropping with `object-cover` was rejected there because it cut off the top and bottom of vertical thumbnails. Inbox and all-items keep the small side thumbnail so the list stays dense while scrolling.
+
 ## Share target
 
 The installed app accepts a shared link only. The manifest `share_target` is `GET /share`, and the query name is `url`. Plain text and files are not listed, so the Android sheet is for links. If a text or image share still opens `/share` without `url`, nothing is created. The service worker stays push-only and does not cache `/share` or `POST /items`.
@@ -117,3 +119,15 @@ The installed app accepts a shared link only. The manifest `share_target` is `GE
 A logged-out share writes the URL into `sessionStorage` before the login redirect. Login and register then call the same `POST /items` body as manual capture, `{ type: "link", content: url }`. That path already fills `link_preview`. A second preview fetch was rejected. The stored URL is removed only after that create succeeds, so a later login does not make a second item.
 
 `localStorage` was rejected. A leftover URL there would create another inbox link on a later login, even in a new tab. `sessionStorage` stays with the tab that received the share, which is the same tab as the login screen. iOS share-sheet gaps stay accepted.
+
+## Item note
+
+A link stores the URL in `content`. Voice and image store the private object key there. The extra words sit in a separate optional `note` column, the same max length as a text item. An empty or whitespace note is stored as `null`, not `""`. A text item keeps its words in `content` and has no second note field.
+
+Writing the note into `content` was rejected, because that would overwrite the URL or the object key. A second table was rejected: one optional string is enough.
+
+Saving a changed note is a touch. Opening the item is not. Changing the note does not change `content`, does not replace a voice or image file, and does not clear or refetch `link_preview`.
+
+## In-app toasts
+
+Save and delete feedback uses `sonner` toasts: loading while the request runs, then success or error. `react-hot-toast` was rejected because `sonner` is smaller to wire for App Router and already ships RTL. Inline form errors stay for validation next to the fields. A full UI redesign was deferred.
