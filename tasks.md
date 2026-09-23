@@ -16,6 +16,7 @@
 | T12 | Link preview | T4, T6 |
 | T13 | Image capture | T8 |
 | T14 | Share target | T4, T10 |
+| T15 | Note beside a link, image, or voice | T13 |
 
 Build from the top of the index. One task is one later chat. A task lists the spec sections to open; do not load the rest of `project-spec.md` into that chat.
 
@@ -713,6 +714,46 @@ An installed Chromium PWA appears for a shared link. A logged-in share becomes o
 
 1. Install the app from Chromium, share a link from another site while logged in, and see one new inbox link.
 2. Edge: log out, share a link, confirm the login screen did not throw the URL away, log in, and see exactly one new inbox item. Share plain text and confirm the inbox did not gain an item.
+
+## T15 — Note beside a link, image, or voice
+
+- **Depends on:** T13
+- **Spec sections:** 6.2, 6.7. This field is not in the original spec. Record the choice in `DECISIONS.md`.
+
+### In scope
+
+A text item already stores the words in `content`. A link stores the URL there, and a voice or image item stores the private object key there. Add a separate optional `note` so the user can write words next to a link, an image, or a voice clip.
+
+`note` is nullable text, trimmed, max `TEXT_MAX_LENGTH`. An empty note is stored as `null`. The Zod schema lives in `packages/shared` and is used by both apps.
+
+Capture:
+
+- Link: the URL field stays, plus an optional note field on the same form. `POST /items` accepts `{ type: "link", content, note? }`.
+- Image: the file field stays, plus an optional note. `POST /items/image` reads the note from the multipart body, field name `note`.
+- Voice: the recorder stays, plus an optional note. `POST /items/voice` reads the note from the multipart body, field name `note`.
+
+The card shows the note under the link, the thumbnail, or the voice duration when it is present. Detail shows the same note in a textarea. Saving it is a touch: `last_touched_at` moves, and `content` does not. A link note does not clear or refetch `link_preview`. A voice or image note does not replace the object key.
+
+### Out of scope
+
+A second note on a text item, rich text, a required note, and changing the file or the URL from this field.
+
+### Rules that are easy to get wrong
+
+- `content` stays the URL or the object key. The note is not written into `content`.
+- Empty and missing notes are `null`, not `""`.
+- Editing the note updates `last_touched_at`. Opening the item does not.
+- User B gets 404 when reading or patching A's note.
+- The image cap stays 5 MB and the voice cap stays 15 MB.
+
+### Done when
+
+Supertest creates a link, an image, and a voice item with a note, patches the note, and asserts `content` did not change. A blank note is stored as `null`. User B gets 404. The card and the detail view show the note after a reload.
+
+### Confirm
+
+1. Save a link, an image, and a voice clip, each with a short note. See the note on the card and on the detail page. Change the note on the detail page, reload, and see the new words.
+2. Edge: save an image with the note left blank, and confirm the card has no extra text. As user B, open user A's item and get 404.
 
 ## Next chat
 
