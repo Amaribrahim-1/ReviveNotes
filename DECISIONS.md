@@ -90,6 +90,14 @@ A voice clip is stored in Cloudflare R2. The item row keeps the private object k
 
 A public bucket URL was rejected, because anyone with that link could play the clip. Bytes in Postgres were rejected, because the database holds rows, not audio files. Render's disk was rejected, because that disk is wiped when the free service sleeps or restarts. The bucket stays private.
 
+## Image bytes
+
+An image item stores one file in the same private R2 bucket as voice. `POST /items/image` reads the multipart field `image`. The object key in `content` is `{user_id}/{item_id}.jpg`, `.png`, `.webp`, or `.gif`. Jpeg is stored as `.jpg`. The cap is 5 MB. The voice cap stays 15 MB. One shared limit was rejected, because a photo and a ten-minute clip are different sizes.
+
+`GET /items/:id/file` streams the image after the same ownership check as voice. The card and the detail view load those bytes with `credentials: "include"`. TanStack Query keeps the blob for this tab under `["item-file", itemId]`. `staleTime` is `Infinity` because the saved file does not change, so opening the card again does not ask the API. The `img` element uses an object URL built from that blob, and the same URL is reused when the view mounts again. The URL is revoked when the query leaves the cache, 5 minutes after nothing on screen is still showing that image. `Cache-Control` stays `private, no-store`. The service worker still does not store the file. The `img` element does not point at the key or at R2. A public image URL was rejected for the same reason as voice playback. A browser HTTP cache was rejected for the same reason: the response is private, and the tab cache already stops the repeat download.
+
+If the put fails, or the new note cannot be read back, the row is deleted. If that row is gone, the object is deleted too, so a rejected note does not keep a file.
+
 ## Link preview
 
 Creating a link, or changing its URL, asks the API to fetch that page with `fetch`. Open Graph `og:site_name`, `og:title`, `og:description`, and `og:image` are stored in `link_preview`. `content` stays the URL the user typed. If the fetch fails, times out, or the address is refused, the item is still saved and `link_preview` is null.
