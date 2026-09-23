@@ -1,7 +1,7 @@
 ---
 name: task-reviewer
+model: grok-4.6[effort=high,fast=false]
 description: Reviews one finished ReviveNotes task against its section in tasks.md. Invoke only when the user asks.
-model: claude-sonnet-5[effort=high]
 readonly: true
 ---
 
