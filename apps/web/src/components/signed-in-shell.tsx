@@ -4,7 +4,7 @@ import type { PublicUser } from "@revivenotes/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { api } from "@/lib/api";
 
@@ -19,6 +19,10 @@ const links = [
   { href: "/settings", label: "الإعدادات" },
 ];
 
+function isNoSession(error: unknown): boolean {
+  return error instanceof Error && error.message === "no-session";
+}
+
 export function SignedInShell({ children }: SignedInShellProps) {
   const pathname = usePathname();
   const [leaving, setLeaving] = useState(false);
@@ -27,13 +31,30 @@ export function SignedInShell({ children }: SignedInShellProps) {
     retry: false,
     enabled: typeof window !== "undefined",
     queryFn: async (): Promise<PublicUser> => {
-      const response = await api("/me");
-      if (!response.ok) {
+      let response: Response;
+      try {
+        response = await api("/me");
+      } catch {
+        throw new Error("offline");
+      }
+      // 401 is a missing session. Any other failure means the server was reached
+      // but the page should stay here instead of pretending to open login.
+      if (response.status === 401) {
         throw new Error("no-session");
+      }
+      if (!response.ok) {
+        throw new Error("offline");
       }
       return response.json() as Promise<PublicUser>;
     },
   });
+
+  useEffect(() => {
+    if (!isNoSession(me.error)) {
+      return;
+    }
+    window.location.assign("/login");
+  }, [me.error]);
 
   async function onLogout() {
     setLeaving(true);
@@ -54,9 +75,24 @@ export function SignedInShell({ children }: SignedInShellProps) {
   }
 
   if (me.isError || !me.data) {
+    if (isNoSession(me.error)) {
+      return (
+        <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
+          <p>بنحوّلك على صفحة الدخول...</p>
+        </main>
+      );
+    }
+
     return (
       <main className="mx-auto flex w-full max-w-xl flex-col gap-3 px-6 py-10">
-        <p>بنحوّلك على صفحة الدخول...</p>
+        <p>مش قادرين نوصل للسيرفر</p>
+        <button
+          type="button"
+          onClick={() => void me.refetch()}
+          className="w-fit rounded border border-neutral-300 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+        >
+          حاول تاني
+        </button>
       </main>
     );
   }
