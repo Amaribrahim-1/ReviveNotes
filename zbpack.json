@@ -1,5 +1,0 @@
-{
-  "app_dir": "apps/api",
-  "build_command": "corepack enable && corepack pnpm install && corepack pnpm --filter @revivenotes/shared build && corepack pnpm --filter @revivenotes/api build",
-  "start_command": "corepack pnpm --filter @revivenotes/api exec prisma migrate deploy && corepack pnpm --filter @revivenotes/api start"
-}

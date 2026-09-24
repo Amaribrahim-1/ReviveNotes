@@ -129,7 +129,7 @@ Session design:
 
 - Access token lifetime: 15 minutes.
 - Refresh token lifetime: 30 days, rotated on use. Store only a hash of the refresh token. Reuse of a rotated token revokes that session.
-- Both tokens are `httpOnly`, `Secure` cookies. The web app (Vercel) and the API (Render) are different sites, so cookies use `SameSite=None`.
+- Both tokens are `httpOnly`, `Secure` cookies. The web app (Vercel) and the API (Back4App) are different sites, so cookies use `SameSite=None`.
 - CORS allows only the web origin and `credentials: true`. No `*` origin.
 - Logout revokes the refresh token server-side and clears both cookies.
 - Password rule: at least 8 characters. No extra composition rules.
@@ -267,7 +267,7 @@ Do not build these now. The API should stay client-agnostic so a future non-brow
 
 ## 9. Constraints
 
-- Hosting and storage stay on free tiers: Vercel, Render free web service, Neon, R2, cron-job.org.
+- Hosting and storage stay on free tiers: Vercel, Back4App Containers, Neon, R2, cron-job.org.
 - Built solo, primarily by Cursor under human supervision.
 - Time budget: roughly one week of focused work.
 - Task breakdown generated from this spec should be the smallest reasonable number of tasks. Group related work. Do not schedule work day-by-day.
