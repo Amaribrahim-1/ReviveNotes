@@ -123,7 +123,12 @@ describe("link preview guard", () => {
       }
       return pageResponse('<meta property="og:title" content="secret">');
     });
-    expect(preview).toBeNull();
+    expect(preview).toEqual({
+      site_name: "1.1.1.1",
+      title: "http://1.1.1.1/start",
+      description: null,
+      image_url: null,
+    });
   });
 
   it("follows a public redirect and reads the open graph tags", async () => {
@@ -149,12 +154,49 @@ describe("link preview guard", () => {
     const late = await fetchLinkPreview("http://1.1.1.1/late", async () => {
       return pageResponse(`${padding}<meta property="og:title" content="late">`);
     });
-    expect(late).toBeNull();
+    expect(late).toEqual({
+      site_name: "1.1.1.1",
+      title: "http://1.1.1.1/late",
+      description: null,
+      image_url: null,
+    });
+  });
+});
+
+describe("link fallbacks", () => {
+  it("falls back to <title> and meta description", async () => {
+    const html = `
+      <title>HTML Title</title>
+      <meta name="description" content="HTML Description">
+    `;
+    const preview = await fetchLinkPreview("http://1.1.1.1/page", async () => pageResponse(html));
+    expect(preview).toEqual({
+      site_name: "1.1.1.1",
+      title: "HTML Title",
+      description: "HTML Description",
+      image_url: null,
+    });
+  });
+
+  it("falls back to twitter tags", async () => {
+    const html = `
+      <meta name="twitter:site" content="Twitter Site">
+      <meta name="twitter:title" content="Twitter Title">
+      <meta name="twitter:description" content="Twitter Description">
+      <meta name="twitter:image" content="/twitter.png">
+    `;
+    const preview = await fetchLinkPreview("http://1.1.1.1/page", async () => pageResponse(html));
+    expect(preview).toEqual({
+      site_name: "Twitter Site",
+      title: "Twitter Title",
+      description: "Twitter Description",
+      image_url: "http://1.1.1.1/twitter.png",
+    });
   });
 });
 
 describe("link preview on items", () => {
-  it("saves http://127.0.0.1/ with an empty preview", async () => {
+  it("saves http://127.0.0.1/ with a fallback preview", async () => {
     const created = await request(app).post("/items").set("Cookie", cookiesA).send({
       type: "link",
       content: "http://127.0.0.1/",
@@ -164,7 +206,12 @@ describe("link preview on items", () => {
       type: "link",
       content: "http://127.0.0.1/",
       status: "inbox",
-      link_preview: null,
+      link_preview: {
+        site_name: "127.0.0.1",
+        title: "http://127.0.0.1/",
+        description: null,
+        image_url: null,
+      },
     });
   });
 
@@ -196,7 +243,12 @@ describe("link preview on items", () => {
       content: "http://127.0.0.1/old",
     });
     expect(created.status).toBe(201);
-    expect(created.body.link_preview).toBeNull();
+    expect(created.body.link_preview).toEqual({
+      site_name: "127.0.0.1",
+      title: "http://127.0.0.1/old",
+      description: null,
+      image_url: null,
+    });
 
     vi.stubGlobal("fetch", async () => pageResponse(savedHtml));
     const patched = await request(app)

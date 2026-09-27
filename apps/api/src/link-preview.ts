@@ -58,10 +58,24 @@ export async function urlIsSafeToFetch(raw: string, signal?: AbortSignal): Promi
 
 export async function fetchLinkPreview(pageUrl: string, load: PreviewLoader = fetch): Promise<LinkPreview | null> {
   try {
-    return await readPreview(pageUrl, AbortSignal.timeout(TIMEOUT_MS), load);
+    const preview = await readPreview(pageUrl, AbortSignal.timeout(TIMEOUT_MS), load);
+    return preview ?? fallbackPreview(pageUrl);
   } catch {
-    return null;
+    return fallbackPreview(pageUrl);
   }
+}
+
+function fallbackPreview(pageUrl: string): LinkPreview {
+  let hostname = pageUrl;
+  try {
+    hostname = new URL(pageUrl).hostname;
+  } catch {}
+  return {
+    site_name: hostname,
+    title: pageUrl,
+    description: null,
+    image_url: null,
+  };
 }
 
 async function readPreview(pageUrl: string, signal: AbortSignal, load: PreviewLoader): Promise<LinkPreview | null> {
@@ -83,7 +97,7 @@ async function readPreview(pageUrl: string, signal: AbortSignal, load: PreviewLo
       cache: "no-store",
       headers: {
         accept: "text/html,application/xhtml+xml",
-        "user-agent": "ReviveNotes",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     });
 
@@ -166,21 +180,34 @@ async function readHtml(response: Response): Promise<string | null> {
 }
 
 async function openGraphFrom(html: string, pageUrl: string, signal: AbortSignal): Promise<LinkPreview | null> {
-  const siteName = clip(readMeta(html, "og:site_name"), 120);
-  const title = clip(readMeta(html, "og:title"), 300);
-  const description = clip(readMeta(html, "og:description"), 400);
-  const imageUrl = await imageUrlFrom(readMeta(html, "og:image"), pageUrl, signal);
+  const rawSiteName = readMeta(html, "og:site_name") ?? readMeta(html, "twitter:site");
+  const rawTitle = readMeta(html, "og:title") ?? readTitle(html) ?? readMeta(html, "twitter:title");
+  const rawDesc = readMeta(html, "og:description") ?? readMeta(html, "description") ?? readMeta(html, "twitter:description");
+  const rawImage = readMeta(html, "og:image") ?? readMeta(html, "twitter:image");
 
-  if (!siteName && !title && !description && !imageUrl) {
+  if (!rawSiteName && !rawTitle && !rawDesc && !rawImage) {
     return null;
   }
 
+  let hostname = "";
+  try {
+    hostname = new URL(pageUrl).hostname;
+  } catch {}
+
   return {
-    site_name: siteName,
-    title,
-    description,
-    image_url: imageUrl,
+    site_name: clip(rawSiteName ?? hostname, 120),
+    title: clip(rawTitle, 300),
+    description: clip(rawDesc, 400),
+    image_url: await imageUrlFrom(rawImage, pageUrl, signal),
   };
+}
+
+function readTitle(html: string): string | null {
+  const match = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  if (!match) {
+    return null;
+  }
+  return decodeHtml(match[1] ?? "");
 }
 
 async function imageUrlFrom(raw: string | null, pageUrl: string, signal: AbortSignal): Promise<string | null> {
