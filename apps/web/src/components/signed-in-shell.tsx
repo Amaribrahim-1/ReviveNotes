@@ -223,6 +223,9 @@ export function SignedInShell({ children, wide = false }: SignedInShellProps) {
           {progress.isSuccess ? (
             <div className={`flex flex-col justify-center gap-1.5 rounded-xl border border-rn-border bg-rn-surface/70 px-4 py-3 text-sm ${mutedClass}`}>
               <div className="flex w-full items-center gap-3">
+                <span className="shrink-0 text-xs font-medium text-rn-text/90">
+                  {t("progress_completed")}
+                </span>
                 <progress
                   value={progress.data.cleared ?? 0}
                   max={Math.max(1, (progress.data.cleared ?? 0) + (progress.data.open ?? 0))}

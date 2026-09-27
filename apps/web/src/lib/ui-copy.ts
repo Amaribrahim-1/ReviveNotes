@@ -49,8 +49,9 @@ export const UI = {
   try_again: { ar: "حاول تاني", en: "Try again" },
   generic_error: { ar: "حصل خطأ. حاول تاني.", en: "Something went wrong. Try again." },
 
+  progress_completed: { ar: "المهام المكتملة", en: "Completed tasks" },
   progress_cleared: { ar: "خلّصت النهارده", en: "Done today" },
-  progress_error: { ar: "مش قادرين نجيب العدّاد", en: "Cannot load today's count" },
+  progress_error: { ar: "مش قادرين نجيب العدّاد", en: "Cannot load count" },
   progress_of: { ar: "من", en: "of" },
 
   share_holding_login: {
