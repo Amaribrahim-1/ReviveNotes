@@ -6,6 +6,8 @@ type LinkPreviewCardProps = {
   large?: boolean;
 };
 
+import Image from "next/image";
+
 export default function LinkPreviewCard({ preview, large = false }: LinkPreviewCardProps) {
   if (large) {
     return (
@@ -29,9 +31,7 @@ export default function LinkPreviewCard({ preview, large = false }: LinkPreviewC
   return (
     <div className="flex gap-3 overflow-hidden rounded-md bg-white/45 p-2.5 dark:bg-black/20">
       {preview.image_url ? (
-        // next/image would download this remote file on the server.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={preview.image_url}
           alt=""
           width={64}
@@ -60,8 +60,7 @@ type LargePreviewImageProps = {
 function LargePreviewImage({ src }: LargePreviewImageProps) {
   return (
     <div className="relative aspect-video w-full overflow-hidden bg-rn-ink">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={src}
         alt=""
         aria-hidden
@@ -70,8 +69,7 @@ function LargePreviewImage({ src }: LargePreviewImageProps) {
         referrerPolicy="no-referrer"
         className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl"
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={src}
         alt=""
         width={640}
