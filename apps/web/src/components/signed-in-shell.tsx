@@ -231,8 +231,10 @@ export function SignedInShell({ children, wide = false }: SignedInShellProps) {
                   max={Math.max(1, (progress.data.cleared ?? 0) + (progress.data.open ?? 0))}
                   className="h-2 flex-1 overflow-hidden rounded-full bg-rn-border [&::-moz-progress-bar]:bg-rn-accent [&::-webkit-progress-bar]:bg-rn-border [&::-webkit-progress-value]:bg-rn-accent"
                 />
-                <span dir="ltr" className="shrink-0 text-xs font-semibold text-rn-accent">
-                  {progress.data.cleared ?? 0} {t("progress_of")} {(progress.data.cleared ?? 0) + (progress.data.open ?? 0)}
+                <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-rn-accent">
+                  <span>{progress.data.cleared ?? 0}</span>
+                  <span>{t("progress_of")}</span>
+                  <span>{(progress.data.cleared ?? 0) + (progress.data.open ?? 0)}</span>
                 </span>
               </div>
             </div>
