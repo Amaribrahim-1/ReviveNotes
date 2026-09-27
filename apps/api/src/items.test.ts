@@ -124,7 +124,12 @@ describe("text and link items", () => {
       content: "https://example.com/notes",
       status: "inbox",
       category_id: null,
-      link_preview: null,
+      link_preview: {
+        site_name: "example.com",
+        title: "https://example.com/notes",
+        description: null,
+        image_url: null,
+      },
     });
     expect(body.last_touched_at).toBe(body.created_at);
 
