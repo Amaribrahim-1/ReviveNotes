@@ -9,7 +9,7 @@ import { formatVoiceDuration } from "./format-voice-duration";
 import ItemImage from "./ItemImage";
 import LinkPreviewCard from "./LinkPreviewCard";
 import NotePin from "./NotePin";
-import VoicePlayButton from "./VoicePlayButton";
+import VoicePlayer from "./VoicePlayer";
 import ItemCardDelete from "./ItemCardDelete";
 
 type ItemCardProps = {
@@ -58,25 +58,26 @@ export default function ItemCard({ item, index }: ItemCardProps) {
 
   if (item.type === "voice") {
     return (
-      <article className={`flex items-center justify-between gap-3 bg-rn-note-pink md:items-start ${paperPaddingClass} ${noteClass} ${tilt}`}>
+      <article className={`flex flex-col bg-rn-note-pink ${paperPaddingClass} ${noteClass} ${tilt}`}>
         <NotePin />
         <CardCategory categoryId={item.category_id} />
         <Link
           href={`/items/${item.id}`}
           aria-label={`${t("open_note_duration")} ${formatVoiceDuration(item.duration_seconds)}`}
-          className="min-w-0 flex-1 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent"
+          className="mb-4 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent flex-1 block"
         >
-          <p className="flex items-center gap-2 text-lg font-medium">
-            <Mic className="size-5 shrink-0" aria-hidden="true" />
-            <span dir="ltr" className="tabular-nums">
-              {formatVoiceDuration(item.duration_seconds)}
-            </span>
-          </p>
-          {cardNote(item.note)}
+          {cardNote(item.note) || (
+            <div className="flex items-center gap-2 text-lg font-medium text-rn-note-ink">
+              <Mic className="size-5 shrink-0" aria-hidden="true" />
+              <span dir="ltr" className="tabular-nums">
+                {formatVoiceDuration(item.duration_seconds)}
+              </span>
+            </div>
+          )}
         </Link>
         {/* The link's after: layer covers the whole note. z-10 keeps the play button pressable above it. */}
-        <div className="relative z-10">
-          <VoicePlayButton itemId={item.id} />
+        <div className="relative z-10 w-full mb-6 mt-auto">
+          <VoicePlayer itemId={item.id} durationSeconds={item.duration_seconds ?? 0} />
         </div>
         <div className="absolute bottom-2 left-2 z-10">
           <ItemCardDelete item={item} />

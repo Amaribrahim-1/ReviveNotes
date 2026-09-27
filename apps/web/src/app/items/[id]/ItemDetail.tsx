@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
 import ItemImage from "@/components/items/ItemImage";
 import LinkPreviewCard from "@/components/items/LinkPreviewCard";
-import VoicePlayButton from "@/components/items/VoicePlayButton";
+import VoicePlayer from "@/components/items/VoicePlayer";
 import { api, apiError } from "@/lib/api";
 import {
   alertClass,
@@ -152,11 +152,8 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
     body = <ItemImage itemId={item.data.id} size="full" />;
   } else if (item.data.type === "voice") {
     body = (
-      <div className="flex items-center justify-between gap-3">
-        <p dir="ltr" className="text-lg font-medium tabular-nums">
-          {formatVoiceDuration(item.data.duration_seconds)}
-        </p>
-        <VoicePlayButton itemId={item.data.id} />
+      <div className="w-full">
+        <VoicePlayer itemId={item.data.id} durationSeconds={item.data.duration_seconds ?? 0} />
       </div>
     );
   } else {
