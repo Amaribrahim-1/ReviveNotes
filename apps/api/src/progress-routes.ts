@@ -11,17 +11,10 @@ export async function getTodayProgress(_req: Request, res: Response) {
   // archived writes no ClearEvent, so those items never appear in this count.
   const day = getUserDayRange(user.timezone, user.day_start_time, now);
 
-  // Only done items that still exist. Deleting an item sets item_id to null on its events,
-  // so a deleted item leaves the count as if it never existed.
-  const cleared = await prisma.clearEvent.count({
+  const cleared = await prisma.item.count({
     where: {
       user_id: user.id,
-      kind: "done",
-      item_id: { not: null },
-      created_at: {
-        gte: day.start,
-        lt: day.end,
-      },
+      status: "done",
     },
   });
 

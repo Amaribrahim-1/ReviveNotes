@@ -221,16 +221,15 @@ export function SignedInShell({ children, wide = false }: SignedInShellProps) {
         <div className="flex flex-col gap-2">
           <p className={`truncate text-sm ${mutedClass}`}>{me.data.email}</p>
           {progress.isSuccess ? (
-            <div className={`flex items-center justify-between gap-4 rounded-xl border border-rn-border bg-rn-surface/70 px-3 py-2 text-sm ${mutedClass}`}>
-              <span>{t("progress_cleared")}</span>
-              <div className="flex flex-1 max-w-[200px] items-center gap-3">
+            <div className={`flex flex-col justify-center gap-1.5 rounded-xl border border-rn-border bg-rn-surface/70 px-4 py-3 text-sm ${mutedClass}`}>
+              <div className="flex w-full items-center gap-3">
                 <progress
-                  value={progress.data.cleared}
-                  max={Math.max(1, progress.data.cleared + progress.data.open)}
+                  value={progress.data.cleared ?? 0}
+                  max={Math.max(1, (progress.data.cleared ?? 0) + (progress.data.open ?? 0))}
                   className="h-2 flex-1 overflow-hidden rounded-full bg-rn-border [&::-moz-progress-bar]:bg-rn-accent [&::-webkit-progress-bar]:bg-rn-border [&::-webkit-progress-value]:bg-rn-accent"
                 />
-                <span dir="ltr" className="shrink-0 font-semibold text-rn-accent">
-                  {progress.data.cleared} {t("progress_of")} {progress.data.cleared + progress.data.open}
+                <span dir="ltr" className="shrink-0 text-xs font-semibold text-rn-accent">
+                  {progress.data.cleared ?? 0} {t("progress_of")} {(progress.data.cleared ?? 0) + (progress.data.open ?? 0)}
                 </span>
               </div>
             </div>

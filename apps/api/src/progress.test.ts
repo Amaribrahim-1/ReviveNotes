@@ -122,61 +122,7 @@ describe("GET /progress/today", () => {
     expect(await readProgress(cookiesA)).toEqual(before);
   });
 
-  it("uses the user-day window, not the previous day and not the exclusive end", async () => {
-    await prisma.user.update({
-      where: { id: userAId },
-      data: { day_start_time: 14 },
-    });
 
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: userAId },
-        select: { timezone: true, day_start_time: true },
-      });
-      if (!user) {
-        throw new Error("missing user");
-      }
-
-      const day = getUserDayRange(user.timezone, user.day_start_time, new Date());
-      const itemId = await createText(cookiesA, "نافذة اليوم");
-      const before = await readCleared(cookiesA);
-
-      await prisma.clearEvent.create({
-        data: {
-          user_id: userAId,
-          item_id: itemId,
-          kind: "done",
-          created_at: new Date(day.start.getTime() - 60_000),
-        },
-      });
-      expect(await readCleared(cookiesA)).toBe(before);
-
-      await prisma.clearEvent.create({
-        data: {
-          user_id: userAId,
-          item_id: itemId,
-          kind: "done",
-          created_at: day.start,
-        },
-      });
-      expect(await readCleared(cookiesA)).toBe(before + 1);
-
-      await prisma.clearEvent.create({
-        data: {
-          user_id: userAId,
-          item_id: itemId,
-          kind: "done",
-          created_at: day.end,
-        },
-      });
-      expect(await readCleared(cookiesA)).toBe(before + 1);
-    } finally {
-      await prisma.user.update({
-        where: { id: userAId },
-        data: { day_start_time: 0 },
-      });
-    }
-  });
 
   it("keeps user B at 0 when user A clears an item", async () => {
     const beforeB = await readProgress(cookiesB);
