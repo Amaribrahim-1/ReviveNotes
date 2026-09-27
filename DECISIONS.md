@@ -12,7 +12,7 @@ The local Prisma Postgres closes an idle connection. The next query then fails w
 
 ## API hosting
 
-The API runs on Vercel Hobby as a second Vercel project, with root directory `apps/api`. Vercel finds the default export in `src/app.ts` and runs the whole Express app as one Vercel Function. Nothing listens on a port there. `src/server.ts` is for running it locally. `apps/api/vercel.json` builds `packages/shared`, runs `prisma generate`, then `prisma migrate deploy`, so a deploy applies new migrations first. The function runs in `cle1` (Cleveland), next to the Neon database in `us-east-2`.
+The API runs on Vercel Hobby as a second Vercel project, with root directory `apps/api`. Vercel finds the default export in `src/app.ts` and runs the whole Express app as one Vercel Function. Nothing listens on a port there. `src/server.ts` is for running it locally. `apps/api/vercel.json` builds `packages/shared`, runs `prisma generate`, then `prisma migrate deploy`, so a deploy applies new migrations first. Preview deployments are turned off on the API project, because there is one database and a preview build of an unfinished branch would apply its migrations there. The function runs in `cle1` (Cleveland), next to the Neon database in `us-east-2`. Vercel Authentication is off on the API project: the web app and cron-job.org must reach it, and every user route already checks the session cookie.
 
 The project is personal, and one Vercel account for both apps is the simplest setup to run. Render needed a payment card. Zeabur ended its shared free plan. Back4App Containers worked, but it needed a Dockerfile and one always-running container. The Dockerfile and `.dockerignore` were removed.
 
