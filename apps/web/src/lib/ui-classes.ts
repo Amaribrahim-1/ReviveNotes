@@ -21,6 +21,9 @@ export const buttonClass =
 export const buttonSecondaryClass =
   "rounded-xl border border-rn-border bg-rn-surface px-4 py-2.5 text-rn-ink transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent disabled:opacity-60";
 
+export const iconButtonClass =
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-rn-border bg-rn-surface text-rn-ink transition-colors hover:bg-rn-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent disabled:opacity-60";
+
 export const buttonDangerClass =
   "rounded-xl border border-rn-danger px-4 py-2.5 text-rn-danger transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent disabled:opacity-60";
 

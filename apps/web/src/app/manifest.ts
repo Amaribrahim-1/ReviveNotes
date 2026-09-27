@@ -7,8 +7,9 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "ReviveNotes",
     start_url: "/inbox",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#171717",
+    // Same values as --rn-bg and --rn-accent in globals.css (light theme).
+    background_color: "#e8f0eb",
+    theme_color: "#2a6b58",
     share_target: {
       action: "/share",
       method: "GET",
@@ -27,6 +28,12 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icon-512.png",
         sizes: "512x512",
         type: "image/png",
+      },
+      {
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

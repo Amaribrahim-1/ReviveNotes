@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AppLogo from "@/components/AppLogo";
 import HeaderToggles from "@/components/HeaderToggles";
 import { authPageClass, buttonClass, linkClass, mutedClass, titleClass } from "@/lib/ui-classes";
 import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
@@ -26,6 +27,7 @@ export default function HomePage() {
         <HeaderToggles />
       </div>
       <div className="flex flex-col gap-4">
+        <AppLogo size={64} />
         <p className="text-sm font-medium text-rn-accent">{t("app_tagline")}</p>
         <h1 className={`${titleClass} text-4xl leading-tight md:text-5xl`}>{t("app_name")}</h1>
         <p className={`text-lg leading-relaxed ${mutedClass}`}>{t("app_blurb")}</p>

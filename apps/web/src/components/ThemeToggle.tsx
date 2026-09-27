@@ -1,14 +1,11 @@
 "use client";
 
-import { buttonSecondaryClass } from "@/lib/ui-classes";
+import { Moon, Sun } from "lucide-react";
+import { iconButtonClass } from "@/lib/ui-classes";
 import { useTheme } from "@/lib/use-theme";
 import { useT } from "@/lib/use-t";
 
-type ThemeToggleProps = {
-  className?: string;
-};
-
-export default function ThemeToggle({ className }: ThemeToggleProps) {
+export default function ThemeToggle() {
   const theme = useTheme((state) => state.theme);
   const ready = useTheme((state) => state.ready);
   const toggle = useTheme((state) => state.toggle);
@@ -23,9 +20,13 @@ export default function ThemeToggle({ className }: ThemeToggleProps) {
       disabled={!ready}
       aria-label={label}
       title={label}
-      className={`${buttonSecondaryClass} shrink-0 px-3 py-2 text-sm ${className ?? ""}`}
+      className={iconButtonClass}
     >
-      {theme === "dark" ? t("theme_light") : t("theme_dark")}
+      {theme === "dark" ? (
+        <Sun className="size-5" aria-hidden="true" />
+      ) : (
+        <Moon className="size-5" aria-hidden="true" />
+      )}
     </button>
   );
 }

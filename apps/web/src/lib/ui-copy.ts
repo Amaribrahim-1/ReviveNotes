@@ -40,8 +40,6 @@ export const UI = {
 
   theme_to_light: { ar: "الوضع الفاتح", en: "Light mode" },
   theme_to_dark: { ar: "الوضع الداكن", en: "Dark mode" },
-  theme_light: { ar: "فاتح", en: "Light" },
-  theme_dark: { ar: "داكن", en: "Dark" },
   lang_to_en: { ar: "English", en: "English" },
   lang_to_ar: { ar: "عربي", en: "عربي" },
 

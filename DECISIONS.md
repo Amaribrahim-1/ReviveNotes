@@ -175,3 +175,17 @@ The attribute sits on the element that holds the user's text, not on the page. T
 Tags are gone from the screens: no tag picker on the detail page, no tag filter on all notes, and no tag section on the categories page. The UI code for them was removed, not hidden with CSS, so no dead components stay behind. Git history keeps them if tags come back.
 
 Tags still live in the database, the API, the shared schemas, and the API tests. Saving an item from the detail page sends only the changed field, so an item that already has tags keeps them. Dropping the tables or the routes was rejected: it would need a migration and would break any other client that already uses tags.
+
+## Logo and app icons
+
+The logo is one SVG file, `apps/web/src/app/icon.svg`: a yellow sticky note with a red pin on a teal square (`--rn-accent`). Next.js turns that file into the browser tab icon by itself, and the nav bar and landing page show the same file through `/icon.svg`. The PNG copies (`favicon.ico`, `apple-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`) were rendered once from that SVG with `sharp`, which already ships inside Next.js. If the logo changes, render them again from the new SVG.
+
+`apple-icon.png` and the maskable icon use a full square with no rounded corners, because iPhone and Android cut their own shape and would fill the corners with black or white. The manifest uses `--rn-bg` as the splash color and `--rn-accent` as the title bar color. An `icon.tsx` that draws the icon in code was rejected: it needs inline styles, and the manifest needs fixed PNG files anyway.
+
+## Nav bar and icons
+
+Signed-in pages have one full-width header: logo and name, then the links, then theme, language, and logout. On desktop (`md` and up) the links sit in that header, and the header sticks to the top. On mobile the same `<nav>` is fixed to the bottom as a tab bar. Each link shows an icon above its label. The header has no blur on mobile, because a blurred parent becomes the anchor for `position: fixed` children and the tab bar would stop sticking to the screen.
+
+Theme, language, and logout are icon-only buttons. Each has an `aria-label` and a `title`, so screen readers and mouse hover both get a name. The language button's label is written in the target language, so it also carries `lang` for correct pronunciation. The logout arrow is mirrored in Arabic so it points the way the page reads.
+
+Icons come from `lucide-react`: ready SVG icons as React components, and only the imported icons end up in the bundle. It hides decorative icons from screen readers by itself (`aria-hidden`). Hand-written inline SVG was rejected: eight icons would be paths nobody on the team can read or change easily.

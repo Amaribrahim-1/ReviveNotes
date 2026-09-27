@@ -1,20 +1,19 @@
 "use client";
 
-import { buttonSecondaryClass } from "@/lib/ui-classes";
+import { Languages } from "lucide-react";
+import { iconButtonClass } from "@/lib/ui-classes";
 import { useLocale } from "@/lib/use-locale";
 import { useT } from "@/lib/use-t";
 
-type LanguageToggleProps = {
-  className?: string;
-};
-
-export default function LanguageToggle({ className }: LanguageToggleProps) {
+export default function LanguageToggle() {
   const locale = useLocale((state) => state.locale);
   const ready = useLocale((state) => state.ready);
   const toggle = useLocale((state) => state.toggle);
   const { t } = useT();
 
   const label = locale === "en" ? t("lang_to_ar") : t("lang_to_en");
+  // The label is written in the target language, so a screen reader must read it in that language.
+  const labelLang = locale === "en" ? "ar" : "en";
 
   return (
     <button
@@ -23,9 +22,10 @@ export default function LanguageToggle({ className }: LanguageToggleProps) {
       disabled={!ready}
       aria-label={label}
       title={label}
-      className={`${buttonSecondaryClass} shrink-0 px-3 py-2 text-sm ${className ?? ""}`}
+      lang={labelLang}
+      className={iconButtonClass}
     >
-      {label}
+      <Languages className="size-5" aria-hidden="true" />
     </button>
   );
 }
