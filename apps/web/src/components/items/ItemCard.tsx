@@ -108,9 +108,12 @@ export default function ItemCard({ item, index }: ItemCardProps) {
 
   const preview = item.link_preview;
   const previewText = preview?.title ?? preview?.site_name ?? preview?.description ?? null;
+  // Ensure the absolute-positioned delete button never overlaps content.
+  // pb-10 gives ~40px clearance at the bottom regardless of whether a note is shown.
+  const linkPaddingClass = hasCategory ? "px-4 pt-9 pb-10" : "px-4 pt-6 pb-10";
 
   return (
-    <article className={`block bg-rn-note-blue ${paperPaddingClass} ${noteClass} ${tilt}`}>
+    <article className={`block bg-rn-note-blue ${linkPaddingClass} ${noteClass} ${tilt}`}>
       <NotePin />
       <CardCategory categoryId={item.category_id} />
       <Link

@@ -2,9 +2,9 @@ import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import type { LinkPreview } from "@revivenotes/shared";
 
-const TIMEOUT_MS = 5000;
+const TIMEOUT_MS = 10000;
 const MAX_BYTES = 1024 * 1024;
-const MAX_REDIRECTS = 3;
+const MAX_REDIRECTS = 5;
 
 const METADATA_HOSTS = new Set([
   "localhost",
@@ -14,6 +14,54 @@ const METADATA_HOSTS = new Set([
   "instance-data",
   "instance-data.ec2.internal",
 ]);
+
+// oEmbed endpoints for well-known platforms that block direct scraping
+const OEMBED_ENDPOINTS: { pattern: RegExp; endpoint: string }[] = [
+  {
+    pattern: /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//,
+    endpoint: "https://www.youtube.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?vimeo\.com\//,
+    endpoint: "https://vimeo.com/api/oembed.json",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?twitter\.com\//,
+    endpoint: "https://publish.twitter.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?x\.com\//,
+    endpoint: "https://publish.twitter.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?tiktok\.com\//,
+    endpoint: "https://www.tiktok.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?soundcloud\.com\//,
+    endpoint: "https://soundcloud.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?spotify\.com\//,
+    endpoint: "https://open.spotify.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/open\.spotify\.com\//,
+    endpoint: "https://open.spotify.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?reddit\.com\//,
+    endpoint: "https://www.reddit.com/oembed",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?flickr\.com\//,
+    endpoint: "https://www.flickr.com/services/oembed/",
+  },
+  {
+    pattern: /^https?:\/\/(www\.)?dailymotion\.com\//,
+    endpoint: "https://www.dailymotion.com/services/oembed",
+  },
+];
 
 type PreviewLoader = (url: string, init: RequestInit) => Promise<Response>;
 
@@ -45,7 +93,13 @@ export async function urlIsSafeToFetch(raw: string, signal?: AbortSignal): Promi
   }
 
   const addresses = await lookupAddresses(hostname, signal);
-  if (!addresses || addresses.length === 0) {
+  // If DNS lookup fails (e.g. network issues in container), treat as public
+  // to avoid blocking legitimate URLs. The actual fetch will fail gracefully
+  // if the address truly is unreachable.
+  if (!addresses) {
+    return true;
+  }
+  if (addresses.length === 0) {
     return false;
   }
   for (const address of addresses) {
@@ -78,7 +132,74 @@ function fallbackPreview(pageUrl: string): LinkPreview {
   };
 }
 
+type OEmbedResponse = {
+  title?: string;
+  author_name?: string;
+  provider_name?: string;
+  thumbnail_url?: string;
+  html?: string;
+  type?: string;
+};
+
+async function tryOEmbed(pageUrl: string, signal: AbortSignal, load: PreviewLoader): Promise<LinkPreview | null> {
+  for (const { pattern, endpoint } of OEMBED_ENDPOINTS) {
+    if (!pattern.test(pageUrl)) {
+      continue;
+    }
+    try {
+      const oEmbedUrl = `${endpoint}?url=${encodeURIComponent(pageUrl)}&format=json`;
+      if (!(await urlIsSafeToFetch(oEmbedUrl, signal))) {
+        continue;
+      }
+      const response = await load(oEmbedUrl, {
+        signal,
+        credentials: "omit",
+        cache: "no-store",
+        headers: {
+          accept: "application/json",
+          "user-agent": "Mozilla/5.0 (compatible; ReviveNotesBot/1.0)",
+        },
+      });
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined);
+        continue;
+      }
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("json")) {
+        await response.body?.cancel().catch(() => undefined);
+        continue;
+      }
+      const data = (await response.json()) as OEmbedResponse;
+      const title = typeof data.title === "string" ? data.title.trim() : null;
+      const siteName = typeof data.provider_name === "string" ? data.provider_name.trim() : null;
+      const imageUrl = typeof data.thumbnail_url === "string" ? data.thumbnail_url.trim() : null;
+      if (!title && !siteName) {
+        continue;
+      }
+      let hostname = "";
+      try {
+        hostname = new URL(pageUrl).hostname;
+      } catch {}
+      return {
+        site_name: siteName ?? hostname,
+        title: clip(title, 300),
+        description: null,
+        image_url: imageUrl && imageUrl.length <= 2000 ? imageUrl : null,
+      };
+    } catch {
+      // Try next endpoint or fall through to HTML scraping
+    }
+  }
+  return null;
+}
+
 async function readPreview(pageUrl: string, signal: AbortSignal, load: PreviewLoader): Promise<LinkPreview | null> {
+  // First, try oEmbed for well-known platforms (much more reliable)
+  const oEmbed = await tryOEmbed(pageUrl, signal, load);
+  if (oEmbed) {
+    return oEmbed;
+  }
+
   let current = pageUrl;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
@@ -96,8 +217,17 @@ async function readPreview(pageUrl: string, signal: AbortSignal, load: PreviewLo
       credentials: "omit",
       cache: "no-store",
       headers: {
-        accept: "text/html,application/xhtml+xml",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9,ar;q=0.8",
+        "accept-encoding": "gzip, deflate, br",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "none",
+        "upgrade-insecure-requests": "1",
       },
     });
 
