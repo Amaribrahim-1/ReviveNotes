@@ -14,6 +14,13 @@
   --color-rn-card: var(--rn-card);
   --color-rn-card-border: var(--rn-card-border);
   --color-rn-danger: var(--rn-danger);
+  --color-rn-note-yellow: var(--rn-note-yellow);
+  --color-rn-note-blue: var(--rn-note-blue);
+  --color-rn-note-pink: var(--rn-note-pink);
+  --color-rn-note-ink: var(--rn-note-ink);
+  --color-rn-photo: var(--rn-photo);
+  --color-rn-pin: var(--rn-pin);
+  --color-rn-pin-shine: var(--rn-pin-shine);
   --font-sans: var(--font-ibm-plex-arabic), "Segoe UI", Tahoma, sans-serif;
 }
 
@@ -31,6 +38,14 @@
   --rn-card-border: #b9cfc2;
   --rn-danger: #b42318;
   --rn-bg-glow: #d5e8dc;
+  /* Sticky notes on the board: text yellow, link blue, voice pink, image a white polaroid. */
+  --rn-note-yellow: #fcefa1;
+  --rn-note-blue: #cfe6f5;
+  --rn-note-pink: #f8d5df;
+  --rn-note-ink: #2a2616;
+  --rn-photo: #fffdf7;
+  --rn-pin: #d9483f;
+  --rn-pin-shine: #f4a09a;
 }
 
 /* Night-paper dark theme. Deep ink ground, lifted card surface, same accent family. */
@@ -47,6 +62,12 @@
   --rn-card-border: #334840;
   --rn-danger: #f97066;
   --rn-bg-glow: #163028;
+  /* Dim paper with light ink, so bright notes do not glare on the dark ground. */
+  --rn-note-yellow: #4a4322;
+  --rn-note-blue: #1f3a4a;
+  --rn-note-pink: #4a2633;
+  --rn-note-ink: #f3ecd2;
+  --rn-photo: #2f2e29;
 }
 
 body {

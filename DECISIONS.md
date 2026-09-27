@@ -189,3 +189,11 @@ Signed-in pages have one full-width header: logo and name, then the links, then 
 Theme, language, and logout are icon-only buttons. Each has an `aria-label` and a `title`, so screen readers and mouse hover both get a name. The language button's label is written in the target language, so it also carries `lang` for correct pronunciation. The logout arrow is mirrored in Arabic so it points the way the page reads.
 
 Icons come from `lucide-react`: ready SVG icons as React components, and only the imported icons end up in the bundle. It hides decorative icons from screen readers by itself (`aria-hidden`). Hand-written inline SVG was rejected: eight icons would be paths nobody on the team can read or change easily.
+
+## Sticky-note board
+
+Inbox, all notes, and the revival screen show items on a board: a CSS grid with 1 column on phones, 2 on `md`, 3 on `lg`, and 4 on `xl`. Those pages ask the shell for a wider page (`wide`), and the revival screen gets it too. Settings, categories, and the detail page stay narrow. The day label is its own grid cell with `col-span-full`, so each day starts on a new row. Newest first, pagination, and "show more" did not change.
+
+Each card is a sticky note with a pin at the top: text is yellow, link is blue and keeps its preview, voice is pink with a mic icon, and image is a polaroid (a wide `4/3` photo on phones, square from `md`). The type is shown by an icon or content as well as color, so color is not the only clue. Colors are CSS variables per theme. In dark mode the paper is dim with light ink, so bright notes do not glare. A text note now shows up to six lines of its text instead of only the first line.
+
+The tilt is a fixed Tailwind class (`rotate-1`, `-rotate-2`, and so on) picked from a list of five by the card's place in the list. Five is not a multiple of 2, 3, or 4, so a column does not repeat one tilt. It stays at 1 to 2 degrees, straightens on hover and keyboard focus, and turns off with `motion-reduce:`. A random tilt was rejected because it would change on every render. An inline `style` rotation was rejected because the UI uses Tailwind classes only. CSS columns (masonry) was rejected because it fills top to bottom, so the newest notes would not read across the first row.

@@ -3,6 +3,14 @@
 export const pageClass =
   "mx-auto flex w-full max-w-xl flex-col gap-6 px-5 py-8 pb-28 md:px-6 md:pb-10";
 
+/** Wider page for screens that show the sticky-note board. */
+export const boardPageClass =
+  "mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-8 pb-28 md:px-6 md:pb-10";
+
+/** The board grid: 1 column on phones, then 2, 3, and 4. `items-start` keeps each note its own height. */
+export const boardClass =
+  "grid list-none grid-cols-1 items-start gap-x-6 gap-y-8 p-0 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+
 export const authPageClass =
   "mx-auto flex w-full max-w-md flex-col gap-6 px-5 py-10 md:px-6";
 

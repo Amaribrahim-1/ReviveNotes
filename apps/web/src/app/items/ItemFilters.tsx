@@ -58,7 +58,7 @@ export default function ItemFilters() {
   });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid gap-4 md:grid-cols-3">
       <div>
         <label className={labelClass} htmlFor="filter-category">
           {t("category")}

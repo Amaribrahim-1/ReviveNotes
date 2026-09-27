@@ -12,12 +12,14 @@ import AppLogo from "@/components/AppLogo";
 import HeaderToggles from "@/components/HeaderToggles";
 import RevivalScreen from "@/components/RevivalScreen";
 import { api } from "@/lib/api";
-import { buttonSecondaryClass, iconButtonClass, mutedClass, pageClass } from "@/lib/ui-classes";
+import { boardPageClass, buttonSecondaryClass, iconButtonClass, mutedClass, pageClass } from "@/lib/ui-classes";
 import { useT } from "@/lib/use-t";
 import type { UiKey } from "@/lib/ui-copy";
 
 type SignedInShellProps = {
   children: ReactNode;
+  /** True on pages that show the sticky-note board, so it has room for several columns. */
+  wide?: boolean;
 };
 
 const navLinks: { href: string; label: UiKey; Icon: LucideIcon }[] = [
@@ -31,7 +33,7 @@ function isNoSession(error: unknown): boolean {
   return error instanceof Error && error.message === "no-session";
 }
 
-export function SignedInShell({ children }: SignedInShellProps) {
+export function SignedInShell({ children, wide = false }: SignedInShellProps) {
   const pathname = usePathname();
   const { t } = useT();
   const [leaving, setLeaving] = useState(false);
@@ -159,12 +161,13 @@ export function SignedInShell({ children }: SignedInShellProps) {
   const showRevival = revivalItems.length > 0;
   const waitingForRevival = revival.isPending || revival.isError || !revival.data;
   const hideNav = showRevival || waitingForRevival;
+  const mainClass = wide || showRevival ? boardPageClass : pageClass;
 
   return (
     <>
       {/* No backdrop blur below md: it would pin the fixed bottom tab bar to this header instead of the screen. */}
       <header className="z-20 border-b border-rn-border bg-rn-surface md:sticky md:top-0 md:bg-rn-surface/85 md:backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-5 py-3 md:px-6">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3 md:px-6">
           <Link
             href="/inbox"
             className="flex min-w-0 items-center gap-2.5 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent"
@@ -214,7 +217,7 @@ export function SignedInShell({ children }: SignedInShellProps) {
           </HeaderToggles>
         </div>
       </header>
-      <main className={pageClass}>
+      <main className={mainClass}>
         <div className="flex flex-col gap-2">
           <p className={`truncate text-sm ${mutedClass}`}>{me.data.email}</p>
           {progress.isSuccess ? (

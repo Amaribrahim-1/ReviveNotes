@@ -11,6 +11,7 @@ import { useT } from "@/lib/use-t";
 
 type RevivalRowProps = {
   item: Item;
+  index: number;
 };
 
 function dropFromRevival(queryClient: QueryClient, itemId: string) {
@@ -24,7 +25,7 @@ function dropFromRevival(queryClient: QueryClient, itemId: string) {
   });
 }
 
-export default function RevivalRow({ item }: RevivalRowProps) {
+export default function RevivalRow({ item, index }: RevivalRowProps) {
   const { t } = useT();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
@@ -81,8 +82,8 @@ export default function RevivalRow({ item }: RevivalRowProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <ItemCard item={item} />
+    <div className="flex flex-col gap-4">
+      <ItemCard item={item} index={index} />
       {confirming ? (
         <div className="flex flex-col gap-3">
           <p>{t("delete_forever_warn")}</p>

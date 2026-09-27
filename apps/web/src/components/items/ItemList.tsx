@@ -7,8 +7,9 @@ import {
   type ItemType,
 } from "@revivenotes/shared";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Fragment } from "react";
 import { api, apiError } from "@/lib/api";
-import { alertClass, buttonSecondaryClass, mutedClass } from "@/lib/ui-classes";
+import { alertClass, boardClass, buttonSecondaryClass, mutedClass } from "@/lib/ui-classes";
 import { useT } from "@/lib/use-t";
 import ItemCard from "./ItemCard";
 
@@ -73,17 +74,21 @@ export default function ItemList({ status, type, categoryId, emptyText }: ItemLi
       {rows.length === 0 ? (
         <p className={mutedClass}>{emptyText}</p>
       ) : (
-        <ul className="flex list-none flex-col gap-3 p-0">
+        <ul className={boardClass}>
           {rows.map((item, index) => {
             const previous = rows[index - 1];
             const showDayLabel = previous === undefined || previous.local_date !== item.local_date;
             return (
-              <li key={item.id} className="flex flex-col gap-2">
+              <Fragment key={item.id}>
                 {showDayLabel ? (
-                  <h2 className={`text-sm font-medium ${mutedClass}`}>{dayLabel(item.local_date, locale)}</h2>
+                  <li className="col-span-full">
+                    <h2 className={`text-sm font-medium ${mutedClass}`}>{dayLabel(item.local_date, locale)}</h2>
+                  </li>
                 ) : null}
-                <ItemCard item={item} />
-              </li>
+                <li>
+                  <ItemCard item={item} index={index} />
+                </li>
+              </Fragment>
             );
           })}
         </ul>
@@ -95,7 +100,7 @@ export default function ItemList({ status, type, categoryId, emptyText }: ItemLi
             void items.fetchNextPage();
           }}
           disabled={items.isFetchingNextPage}
-          className={buttonSecondaryClass}
+          className={`self-center ${buttonSecondaryClass}`}
         >
           {items.isFetchingNextPage ? t("loading") : t("show_more")}
         </button>

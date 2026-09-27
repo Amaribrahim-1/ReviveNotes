@@ -27,7 +27,7 @@ export default function LinkPreviewCard({ preview, large = false }: LinkPreviewC
   }
 
   return (
-    <div className="flex gap-3 overflow-hidden rounded-xl border border-rn-border bg-rn-surface p-3">
+    <div className="flex gap-3 overflow-hidden rounded-md bg-white/45 p-2.5 dark:bg-black/20">
       {preview.image_url ? (
         // next/image would download this remote file on the server.
         // eslint-disable-next-line @next/next/no-img-element
@@ -41,10 +41,10 @@ export default function LinkPreviewCard({ preview, large = false }: LinkPreviewC
         />
       ) : null}
       <div className="min-w-0" dir="auto">
-        {preview.site_name ? <p className={`text-xs ${mutedClass}`}>{preview.site_name}</p> : null}
-        {preview.title ? <p className="font-medium break-words">{preview.title}</p> : null}
+        {preview.site_name ? <p className="text-xs text-rn-note-ink/75">{preview.site_name}</p> : null}
+        {preview.title ? <p className="line-clamp-3 font-medium break-words">{preview.title}</p> : null}
         {preview.description ? (
-          <p className={`line-clamp-2 break-words text-sm ${mutedClass}`}>{preview.description}</p>
+          <p className="line-clamp-2 break-words text-sm text-rn-note-ink/75">{preview.description}</p>
         ) : null}
       </div>
     </div>

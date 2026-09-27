@@ -10,7 +10,7 @@ export default function AllItemsPage() {
   const { t } = useT();
 
   return (
-    <SignedInShell>
+    <SignedInShell wide>
       <h1 className={titleClass}>{t("all_items_title")}</h1>
       <div className={surfacePanelClass}>
         <ItemFilters />

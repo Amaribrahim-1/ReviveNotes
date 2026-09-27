@@ -10,9 +10,11 @@ export default function InboxPage() {
   const { t } = useT();
 
   return (
-    <SignedInShell>
+    <SignedInShell wide>
       <h1 className={titleClass}>{t("inbox_title")}</h1>
-      <CaptureForm />
+      <div className="w-full max-w-2xl">
+        <CaptureForm />
+      </div>
       <ItemList status="inbox" emptyText={t("inbox_empty_hint")} />
     </SignedInShell>
   );

@@ -2,7 +2,7 @@
 
 import type { Item } from "@revivenotes/shared";
 import RevivalRow from "./RevivalRow";
-import { mutedClass, titleClass } from "@/lib/ui-classes";
+import { boardClass, mutedClass, titleClass } from "@/lib/ui-classes";
 import { useT } from "@/lib/use-t";
 
 type RevivalScreenProps = {
@@ -18,10 +18,10 @@ export default function RevivalScreen({ items }: RevivalScreenProps) {
         {t("revival_title")}
       </h1>
       <p className={mutedClass}>{t("revival_blurb")}</p>
-      <ul className="flex flex-col gap-4">
-        {items.map((item) => (
+      <ul className={boardClass}>
+        {items.map((item, index) => (
           <li key={item.id}>
-            <RevivalRow item={item} />
+            <RevivalRow item={item} index={index} />
           </li>
         ))}
       </ul>
