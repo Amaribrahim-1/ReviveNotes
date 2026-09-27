@@ -14,7 +14,6 @@ If time slips, skip from the end: T24, then T22.
 | T19 | Board with pinned sticky notes | T17, T18 |
 | T20 | Delete from the card with a confirm modal | T19 |
 | T21 | Real voice player | T19 |
-| T22 | Drag and drop | T20 |
 | T23 | Real progress bar | T18 |
 | T24 | Better link preview | None |
 
@@ -113,23 +112,6 @@ If time slips, skip from the end: T24, then T22.
 **Confirm**
 1. Play a voice note on the card, pause, drag the seek bar, resume from there.
 2. Edge: play it, open the detail page, play again. After returning, `last_touched_at` did not change (revival order is the same).
-
-## T22 — Drag and drop
-
-**Do**
-- Drag a sticky note onto a drop zone: Done, Archive, or Delete. Delete opens the T20 modal.
-- Drag a sticky note onto a category chip in a strip above the board to set its category.
-- Use the existing `PATCH /items/:id` and `DELETE /items/:id`.
-
-**Watch**
-- Ask before adding `@dnd-kit/core`: native HTML drag and drop does not work with touch on phones. If the answer is no, drag works on desktop only.
-- No manual ordering. Newest first stays.
-- Status buttons and the delete button stay as the keyboard way to do the same thing.
-- Setting a category does not change status.
-
-**Confirm**
-1. Drag a note onto Done: it leaves the inbox and progress rises. Drag another onto a category: the category shows on it and its status stays `inbox`.
-2. Edge: on a phone (or touch emulation) drag still works, or, if dnd-kit was refused, the buttons still do the job.
 
 ## T23 — Real progress bar
 
