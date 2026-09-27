@@ -123,7 +123,8 @@ export default function CaptureForm() {
             </label>
             <input
               id="capture-link"
-              type="url"
+              type="text"
+              inputMode="url"
               maxLength={LINK_MAX_LENGTH}
               autoComplete="off"
               dir="ltr"

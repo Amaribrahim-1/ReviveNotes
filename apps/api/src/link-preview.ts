@@ -219,7 +219,6 @@ async function readPreview(pageUrl: string, signal: AbortSignal, load: PreviewLo
       headers: {
         accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "accept-language": "en-US,en;q=0.9,ar;q=0.8",
-        "accept-encoding": "gzip, deflate, br",
         "cache-control": "no-cache",
         pragma: "no-cache",
         "user-agent":

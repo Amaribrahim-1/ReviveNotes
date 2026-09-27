@@ -92,7 +92,7 @@ export default function ItemImage({ itemId, size }: ItemImageProps) {
   }
 
   const className =
-    size === "thumb" ? "h-full w-full object-cover" : "h-auto w-full rounded-xl object-contain";
+    size === "thumb" ? "absolute inset-0 h-full w-full object-cover" : "h-auto w-full rounded-xl object-contain";
 
   return <img src={urlForItemFile(itemId, file.data)} alt={t("image_note_alt")} className={className} />;
 }

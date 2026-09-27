@@ -50,7 +50,8 @@ export default function ItemContentForm({ item, pending, onSave, onInvalid }: It
           </label>
           <input
             id="item-content"
-            type="url"
+            type="text"
+            inputMode="url"
             maxLength={LINK_MAX_LENGTH}
             autoComplete="off"
             dir="ltr"
