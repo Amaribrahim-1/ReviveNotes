@@ -12,9 +12,7 @@ export default function InboxPage() {
   return (
     <SignedInShell wide>
       <h1 className={titleClass}>{t("inbox_title")}</h1>
-      <div className="w-full max-w-2xl">
-        <CaptureForm />
-      </div>
+      <CaptureForm />
       <ItemList status="inbox" emptyText={t("inbox_empty_hint")} />
     </SignedInShell>
   );

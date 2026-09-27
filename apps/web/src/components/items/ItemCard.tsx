@@ -19,8 +19,10 @@ type ItemCardProps = {
 // Five is not a multiple of 2, 3, or 4, so one board column does not repeat the same tilt all the way down.
 const tilts = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-1", "rotate-2"];
 
+// From md up the board has several columns, so every note gets the same height (h-56).
+// The line clamps below keep the longest content inside that height. Phones keep natural heights.
 const noteClass =
-  "relative rounded-sm text-rn-note-ink shadow-[0_10px_18px_-10px_rgb(0_0_0_/_0.45),0_1px_3px_rgb(0_0_0_/_0.1)] transition hover:rotate-0 hover:shadow-[0_16px_26px_-12px_rgb(0_0_0_/_0.5),0_2px_4px_rgb(0_0_0_/_0.1)] focus-within:rotate-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rn-accent motion-reduce:rotate-0 motion-reduce:transition-none dark:shadow-[0_10px_20px_-8px_rgb(0_0_0_/_0.8)] dark:hover:shadow-[0_16px_28px_-10px_rgb(0_0_0_/_0.9)]";
+  "relative rounded-sm text-rn-note-ink md:h-56 shadow-[0_10px_18px_-10px_rgb(0_0_0_/_0.45),0_1px_3px_rgb(0_0_0_/_0.1)] transition hover:rotate-0 hover:shadow-[0_16px_26px_-12px_rgb(0_0_0_/_0.5),0_2px_4px_rgb(0_0_0_/_0.1)] focus-within:rotate-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rn-accent motion-reduce:rotate-0 motion-reduce:transition-none dark:shadow-[0_10px_20px_-8px_rgb(0_0_0_/_0.8)] dark:hover:shadow-[0_16px_28px_-10px_rgb(0_0_0_/_0.9)]";
 
 const paperPaddingClass = "px-4 pt-6 pb-4";
 
@@ -33,20 +35,20 @@ export default function ItemCard({ item, index }: ItemCardProps) {
       <Link
         href={`/items/${item.id}`}
         aria-label={t("open_image")}
-        className={`block bg-rn-photo p-3 ${noteClass} ${tilt}`}
+        className={`block bg-rn-photo p-3 md:flex md:flex-col ${noteClass} ${tilt}`}
       >
         <NotePin />
-        <div className="flex aspect-[4/3] w-full items-center md:aspect-square justify-center overflow-hidden bg-rn-note-ink/10 text-center text-sm">
+        <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-rn-note-ink/10 text-center text-sm md:aspect-auto md:min-h-0 md:flex-1">
           <ItemImage itemId={item.id} size="thumb" />
         </div>
-        <div className="min-h-8">{cardNote(item.note)}</div>
+        <div className="min-h-8 md:shrink-0">{cardNote(item.note)}</div>
       </Link>
     );
   }
 
   if (item.type === "voice") {
     return (
-      <article className={`flex items-center justify-between gap-3 bg-rn-note-pink ${paperPaddingClass} ${noteClass} ${tilt}`}>
+      <article className={`flex items-center justify-between gap-3 bg-rn-note-pink md:items-start ${paperPaddingClass} ${noteClass} ${tilt}`}>
         <NotePin />
         <Link
           href={`/items/${item.id}`}
@@ -93,7 +95,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
       {preview ? (
         <LinkPreviewCard preview={preview} />
       ) : (
-        <p dir="ltr" className="break-all">
+        <p dir="ltr" className="break-all md:line-clamp-4">
           {item.content}
         </p>
       )}
@@ -107,7 +109,7 @@ function cardNote(note: string | null) {
     return null;
   }
   return (
-    <p dir="auto" className="mt-3 line-clamp-2 break-words text-sm text-rn-note-ink/75">
+    <p dir="auto" className="mt-3 line-clamp-2 break-words text-sm text-rn-note-ink/75 md:line-clamp-1">
       {note.split(/\r?\n/)[0] ?? note}
     </p>
   );

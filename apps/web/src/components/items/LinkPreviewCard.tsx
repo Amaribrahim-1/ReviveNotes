@@ -42,7 +42,7 @@ export default function LinkPreviewCard({ preview, large = false }: LinkPreviewC
       ) : null}
       <div className="min-w-0" dir="auto">
         {preview.site_name ? <p className="text-xs text-rn-note-ink/75">{preview.site_name}</p> : null}
-        {preview.title ? <p className="line-clamp-3 font-medium break-words">{preview.title}</p> : null}
+        {preview.title ? <p className="line-clamp-3 font-medium break-words md:line-clamp-2">{preview.title}</p> : null}
         {preview.description ? (
           <p className="line-clamp-2 break-words text-sm text-rn-note-ink/75">{preview.description}</p>
         ) : null}
