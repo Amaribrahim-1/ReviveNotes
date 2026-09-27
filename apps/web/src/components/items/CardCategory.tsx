@@ -37,7 +37,7 @@ export default function CardCategory({ categoryId }: CardCategoryProps) {
   return (
     <span
       title={category.name}
-      className="pointer-events-none absolute top-1 end-2 z-10 flex max-w-[40%] items-center gap-1 rounded-full bg-rn-note-ink/10 px-2 py-0.5 text-xs text-rn-note-ink"
+      className="pointer-events-none absolute top-2 end-3 z-10 flex max-w-[40%] items-center gap-1 rounded-full bg-rn-note-ink/10 px-2 py-0.5 text-xs text-rn-note-ink"
     >
       <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${categoryColorClass[category.color]}`} />
       <span className="sr-only">{t("category")}: </span>

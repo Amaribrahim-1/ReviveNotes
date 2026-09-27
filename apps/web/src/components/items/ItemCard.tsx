@@ -25,18 +25,20 @@ const tilts = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-1", "rotate-2"];
 const noteClass =
   "relative rounded-sm text-rn-note-ink md:h-56 shadow-[0_10px_18px_-10px_rgb(0_0_0_/_0.45),0_1px_3px_rgb(0_0_0_/_0.1)] transition hover:rotate-0 hover:shadow-[0_16px_26px_-12px_rgb(0_0_0_/_0.5),0_2px_4px_rgb(0_0_0_/_0.1)] focus-within:rotate-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rn-accent motion-reduce:rotate-0 motion-reduce:transition-none dark:shadow-[0_10px_20px_-8px_rgb(0_0_0_/_0.8)] dark:hover:shadow-[0_16px_28px_-10px_rgb(0_0_0_/_0.9)]";
 
-const paperPaddingClass = "px-4 pt-6 pb-4";
-
 export default function ItemCard({ item, index }: ItemCardProps) {
   const { t } = useT();
   const tilt = tilts[index % tilts.length];
+  // A note with a category gets a taller top strip, so the category pill sits above the content.
+  const hasCategory = item.category_id !== null;
+  const paperPaddingClass = hasCategory ? "px-4 pt-9 pb-4" : "px-4 pt-6 pb-4";
+  const photoPaddingClass = hasCategory ? "px-3 pt-9 pb-3" : "p-3";
 
   if (item.type === "image") {
     return (
       <Link
         href={`/items/${item.id}`}
         aria-label={t("open_image")}
-        className={`block bg-rn-photo p-3 md:flex md:flex-col ${noteClass} ${tilt}`}
+        className={`block bg-rn-photo ${photoPaddingClass} md:flex md:flex-col ${noteClass} ${tilt}`}
       >
         <NotePin />
         <CardCategory categoryId={item.category_id} />
