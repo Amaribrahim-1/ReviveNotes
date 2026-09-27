@@ -13,4 +13,4 @@ alwaysApply: false
 - New items start as `inbox` with `category_id` null. Assigning a category does not change status.
 - Entering `done` writes a `done` ClearEvent. Leaving `done` removes that event if it falls in the current user-day. Permanent delete writes a `deleted` event that stays. Archive writes nothing.
 - Store email trimmed and lowercased. Names for categories and tags are unique per user, case-insensitive.
-- One image item holds one image (max 5 MB). One voice item holds one clip (10 minutes or 15 MB). Keep the recorded blob. Do not transcode.
+- One image item holds one image (max 4 MB). One voice item holds one clip (10 minutes or 4 MB). Keep the recorded blob. Do not transcode.

@@ -188,7 +188,7 @@ export const UI = {
   image_note_alt: { ar: "صورة الملاحظة", en: "Note image" },
   open_image: { ar: "فتح صورة الملاحظة", en: "Open note image" },
   image_load_error: { ar: "مش قادرين نعرض الصورة", en: "Cannot show the image" },
-  image_too_big: { ar: "الصورة أكبر من 5 ميجا", en: "Image is larger than 5 MB" },
+  image_too_big: { ar: "الصورة أكبر من 4 ميجا", en: "Image is larger than 4 MB" },
   image_empty: { ar: "الصورة فاضية", en: "Image is empty" },
   image_type: {
     ar: "نوع الصورة لازم يكون jpeg أو png أو webp أو gif",

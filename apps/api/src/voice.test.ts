@@ -168,12 +168,12 @@ describe("voice items", () => {
     expect(file.headers["content-type"]).toBe("audio/ogg");
   });
 
-  it("rejects a body over 15 MB and leaves no row", async () => {
+  it("rejects a body over 4 MB and leaves no row", async () => {
     const before = await prisma.item.count({ where: { user_id: userAId } });
     const tooBig = Buffer.alloc(VOICE_MAX_BYTES + 1);
     const created = await postVoice(cookiesA, tooBig, "4");
     expect(created.status).toBe(400);
-    expect(created.body).toEqual({ error: "التسجيل أكبر من 15 ميجا" });
+    expect(created.body).toEqual({ error: "التسجيل أكبر من 4 ميجا" });
     const after = await prisma.item.count({ where: { user_id: userAId } });
     expect(after).toBe(before);
   }, 30_000);

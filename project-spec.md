@@ -32,7 +32,7 @@ Frontend and backend are deployed as separate services but live in one repo so v
 
 ## 4. Tech Stack
 
-The custom backend stays. Do not replace it with Supabase, Firebase, or any other BaaS, and do not move the API onto Vercel serverless.
+The custom backend stays. Do not replace it with Supabase, Firebase, or any other BaaS. The Express API runs on Vercel as one serverless function, in its own Vercel project.
 
 **Frontend:** Next.js (App Router) + TypeScript + Tailwind CSS + TanStack Query + React Hook Form + Zod + Zustand
 
@@ -43,12 +43,12 @@ The custom backend stays. Do not replace it with Supabase, Firebase, or any othe
 
 **Database:** PostgreSQL on Neon (free tier), accessed only by the API through Prisma.
 
-**File storage:** Cloudflare R2 (S3-compatible, free tier: 10 GB-month Standard storage, no egress fee). R2 stores voice and image bytes only. Authorization stays in the Express API. Postgres does not store file bytes. Render's free disk is ephemeral, so it is not the file store.
+**File storage:** Cloudflare R2 (S3-compatible, free tier: 10 GB-month Standard storage, no egress fee). R2 stores voice and image bytes only. Authorization stays in the Express API. Postgres does not store file bytes. A Vercel Function keeps no disk between requests, so it is not the file store.
 
 **Infrastructure (all free tier):**
 
 - Frontend hosting: Vercel.
-- Backend hosting: Back4App Containers free tier (one Dockerized Express service from GitHub). No credit card. Render free was the original host, but creating a free service there now requires a payment card for verification. Zeabur was tried next, but shared free clusters are deprecated and a paid server is required. Railway is not the host: its free plan is a small monthly usage credit, not a dependable always-free service.
+- Backend hosting: Vercel Hobby, a second Vercel project with root directory `apps/api`. The whole Express app becomes one Vercel Function. A request or response body is capped at 4.5 MB, so file uploads stay at 4 MB.
 - Database: Neon.
 - Reminder wake-ups: [cron-job.org](https://cron-job.org/en/) (free HTTP cron). It closes the connection after 30 seconds and reads at most 64 KB of the response.
 
@@ -129,7 +129,7 @@ Session design:
 
 - Access token lifetime: 15 minutes.
 - Refresh token lifetime: 30 days, rotated on use. Store only a hash of the refresh token. Reuse of a rotated token revokes that session.
-- Both tokens are `httpOnly`, `Secure` cookies. The web app (Vercel) and the API (Back4App) are different sites, so cookies use `SameSite=None`.
+- Both tokens are `httpOnly`, `Secure` cookies. The web app and the API are two Vercel projects on different `*.vercel.app` domains, which are different sites, so cookies use `SameSite=None`.
 - CORS allows only the web origin and `credentials: true`. No `*` origin.
 - Logout revokes the refresh token server-side and clears both cookies.
 - Password rule: at least 8 characters. No extra composition rules.
@@ -152,11 +152,11 @@ Every protected endpoint must verify that the requesting user owns the resource.
 
 ### 6.4 Voice Capture
 - Record in the browser with `MediaRecorder` and store the blob as-is (typically WebM/Opus). Do not transcode to MP3 in MVP.
-- Limits: 10 minutes and 15 MB, whichever is reached first. Reject over-limit uploads.
+- Limits: 10 minutes and 4 MB, whichever is reached first. Reject over-limit uploads. The recorder uses 32 kbps, so 10 minutes is about 2.4 MB.
 - Playback goes through the authenticated API. No transcription in MVP.
 
 ### 6.5 Image Capture
-- One image per item, max 5 MB, shown as a thumbnail on the card and full size in the detail view.
+- One image per item, max 4 MB, shown as a thumbnail on the card and full size in the detail view.
 - Bytes are served by the authenticated API after the ownership check.
 
 ### 6.6 Categories & Tags
@@ -227,13 +227,13 @@ Reminders are in the MVP. They are push notifications, not an in-app badge only.
 - The browser's PushSubscription is stored in `PushSubscription`.
 - Sending is done by the API (VAPID Web Push), so the feature lives in this backend.
 
-Wake-up design, because Render sleeps and cron-job.org gives up after 30 seconds:
+Wake-up design, because a Vercel Function only runs when a request arrives and cron-job.org gives up after 30 seconds:
 
-- One cron-job.org job POSTs to the API dispatch route every 5 minutes. That is inside Render's 15-minute sleep window, so a healthy service stays warm and the handler can finish well under 30 seconds.
+- One cron-job.org job POSTs to the API dispatch route every 5 minutes. Each POST starts the function, and the handler finishes well under 30 seconds.
 - The dispatch route is not user-authenticated. It requires a shared secret (`CRON_SECRET` header). It returns a short body (for example `OK`).
 - For each user with reminders enabled, if a configured local time has been reached today and that slot was not already sent, send the push and record the slot so a later tick does not send it again.
-- A tick that hits a cold start may die at 30 seconds while Render is still booting. The next tick, 5 minutes later, hits a warm process. Chosen times can therefore slip by a few minutes. That slip is accepted. iOS delivery gaps stay accepted.
-- The 750-hour free allowance is almost entirely consumed by keeping this one service awake. Do not add a second always-on service.
+- A tick that fails is picked up by the next tick, 5 minutes later. Chosen times can therefore slip by a few minutes. That slip is accepted. iOS delivery gaps stay accepted.
+- Vercel Cron was not used: the Hobby plan runs it at most once a day. Do not add a second always-on service.
 
 ### 6.14 Share Target (PWA)
 Implement the Web Share Target API so the installed PWA appears in the Android share sheet.
@@ -267,7 +267,7 @@ Do not build these now. The API should stay client-agnostic so a future non-brow
 
 ## 9. Constraints
 
-- Hosting and storage stay on free tiers: Vercel, Back4App Containers, Neon, R2, cron-job.org.
+- Hosting and storage stay on free tiers: Vercel, Neon, R2, cron-job.org.
 - Built solo, primarily by Cursor under human supervision.
 - Time budget: roughly one week of focused work.
 - Task breakdown generated from this spec should be the smallest reasonable number of tasks. Group related work. Do not schedule work day-by-day.

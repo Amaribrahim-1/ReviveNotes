@@ -141,7 +141,8 @@ export default function VoiceCapture() {
       return;
     }
 
-    const recorder = new MediaRecorder(stream, { mimeType: mime });
+    // 32 kbps keeps a 10-minute clip near 2.4 MB, under VOICE_MAX_BYTES.
+    const recorder = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 32_000 });
     const chunks: Blob[] = [];
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) {

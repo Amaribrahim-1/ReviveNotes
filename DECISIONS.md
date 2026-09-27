@@ -4,13 +4,21 @@
 
 ReviveNotes keeps a separate Express API in this repo. Postgres is reached only through Prisma. Voice and image bytes go to Cloudflare R2 later, not into Postgres.
 
-Supabase, Firebase, and deploying the API as Vercel serverless were rejected. The API stays one Node service so a future non-browser client can call the same routes.
+Supabase and Firebase were rejected. The API stays one Express app with its own routes, so a future non-browser client can call the same routes.
 
-Hosting for that API was meant to be Render's free web service. Render now requires a payment card before creating even a free service, and the available cards either had no funds for the verification hold or were debit cards Render rejected. Paying a middleman to top up a credit card was rejected. Zeabur was tried next for a no-card free Node host, but Zeabur deprecated shared free clusters and now requires renting a paid server. Back4App Containers free tier was chosen instead: still one long-running Express process in Docker, no card required, deployed from GitHub. Railway stayed rejected: its free allowance is a small usage credit, not a dependable always-free service.
-
-`dotenv` is installed in the API because Prisma 7 reads `DATABASE_URL` from `prisma.config.ts`, and Node does not load a `.env` file by itself. `tsx` was not added. The API is compiled with `tsc` and started with `node`.
+`dotenv` is installed in the API because Prisma 7 reads `DATABASE_URL` from `prisma.config.ts`, and Node does not load a `.env` file by itself. `tsx` was not added. Locally the API is compiled with `tsc` and started with `node`. On Vercel no `.env` file exists, so `dotenv` loads nothing and the project environment variables are used.
 
 The local Prisma Postgres closes an idle connection. The next query then fails with Prisma `P1017` (`Server has closed the connection`), and the API was turning that into "حصل خطأ في السيرفر". The `pg` pool now drops idle clients after 10 seconds and keeps TCP keepalive on. If a query still hits a closed socket, that same query runs once more on a new connection. A second database, or hiding every database error, was rejected.
+
+## API hosting
+
+The API runs on Vercel Hobby as a second Vercel project, with root directory `apps/api`. Vercel finds the default export in `src/app.ts` and runs the whole Express app as one Vercel Function. Nothing listens on a port there. `src/server.ts` is for running it locally. `apps/api/vercel.json` builds `packages/shared`, runs `prisma generate`, then `prisma migrate deploy`, so a deploy applies new migrations first. The function runs in `cle1` (Cleveland), next to the Neon database in `us-east-2`.
+
+The project is personal, and one Vercel account for both apps is the simplest setup to run. Render needed a payment card. Zeabur ended its shared free plan. Back4App Containers worked, but it needed a Dockerfile and one always-running container. The Dockerfile and `.dockerignore` were removed.
+
+Vercel caps a request or response body at 4.5 MB. Uploads still pass through the API, so each file cap is now 4 MB: voice and image both. The recorder asks for 32 kbps, so a 10-minute clip is about 2.4 MB. Uploading straight to R2 with a signed URL was rejected for now: it is a second upload path to secure and test.
+
+The register and login counter still sits in memory. Vercel can run more than one copy of the function, and a copy can stop between requests, so the counter is weaker than before. That is accepted for a personal app. Redis stays rejected. `trust proxy` is on only when `VERCEL` is set, because Vercel overwrites `X-Forwarded-For` with the real client IP. Without it, every user would share Vercel's proxy address.
 
 ## Schema
 
@@ -26,11 +34,11 @@ Timestamps are `timestamptz` in UTC. Prisma's default `DateTime` is `timestamp` 
 
 The browser holds two cookies, `access_token` and `refresh_token`. Both are `httpOnly`, `Secure`, and `SameSite=None`, on path `/`. The access cookie is a JWT that lives 15 minutes. The refresh cookie is a random value that lives 30 days. The database stores only the SHA-256 hash of that random value. bcrypt is for the password. The refresh token is already random, so it is not hashed with bcrypt.
 
-`SameSite=None` is there because the web app and the API are different sites: different ports on your machine, and Vercel plus Back4App later. The `Secure` flag stays on localhost. Chromium treats `http://localhost` as a secure context, so the cookie still sticks.
+`SameSite=None` is there because the web app and the API are different sites: different ports on your machine, and two separate `*.vercel.app` domains when deployed. The `Secure` flag stays on localhost. Chromium treats `http://localhost` as a secure context, so the cookie still sticks.
 
 Login creates a new `session_id`, so each browser has its own session. Refresh rotation happens only in `POST /auth/refresh`. The new row keeps the same `session_id`, and the old row gets `replaced_at`. The access JWT carries that `session_id`. If a refresh token shows up again after it was replaced or revoked, every row with that `session_id` gets `revoked_at`, and `/me` rejects the access cookie from that browser too. Another browser, with its own `session_id`, stays logged in.
 
-Register and login are limited to 5 attempts per 15 minutes per IP plus email. The counter sits in memory in this process, so it resets when the process restarts. Redis was rejected because it would be a second always-on service.
+Register and login are limited to 5 attempts per 15 minutes per IP plus email. The counter sits in memory in this process, so it resets when the process restarts. On Vercel see API hosting above. Redis was rejected because it would be a second always-on service.
 
 ## Categories and tags
 
@@ -78,9 +86,9 @@ The signed-in shell asks once per full page load. TanStack Query keeps that resu
 
 ## Reminders
 
-Reminders are Web Push, and they stay off until the user turns them on and picks 1 to 3 times. The notification body is only the count of items in `inbox` or `active`. A cron-job.org job POSTs `/reminders/dispatch` every 5 minutes. That gap sits inside Render's 15-minute sleep, so this one web service stays awake. The route has no user session. The header `x-cron-secret` must match `CRON_SECRET`. A second always-on worker was rejected, because the free 750 hours are almost all used by this one service.
+Reminders are Web Push, and they stay off until the user turns them on and picks 1 to 3 times. The notification body is only the count of items in `inbox` or `active`. A cron-job.org job POSTs `/reminders/dispatch` every 5 minutes, and each POST starts the Vercel Function. The route has no user session. The header `x-cron-secret` must match `CRON_SECRET`. Vercel Cron was rejected, because Hobby runs a cron job at most once a day. A second always-on worker stays rejected.
 
-cron-job.org closes the connection after about 30 seconds. A cold start can die in that window. The delivery row is written only after a push is accepted, so the next tick finishes the users that were missed. A few minutes of slip is accepted. iOS may not deliver the push. That gap is accepted.
+cron-job.org closes the connection after about 30 seconds. A slow tick can die in that window. The delivery row is written only after a push is accepted, so the next tick finishes the users that were missed. A few minutes of slip is accepted. iOS may not deliver the push. That gap is accepted.
 
 The slot is the calendar date in `timezone` plus `HH:MM`. `day_start_time` is not added to it. The API uses the `web-push` package to send VAPID Web Push. Hand-rolling that encryption was rejected. The browser asks the API for the public key, so the private key stays in the API env.
 
@@ -92,11 +100,11 @@ Brave ships the Push API but leaves Google's push service off. `subscribe` then 
 
 A voice clip is stored in Cloudflare R2. The item row keeps the private object key in `content`, shaped like `{user_id}/{item_id}.webm` or `.ogg`. `GET /items/:id/file` loads the row with `id` and `user_id`, then the API streams the bytes. The JSON body and the audio element never get an R2 host.
 
-A public bucket URL was rejected, because anyone with that link could play the clip. Bytes in Postgres were rejected, because the database holds rows, not audio files. Render's disk was rejected, because that disk is wiped when the free service sleeps or restarts. The bucket stays private.
+A public bucket URL was rejected, because anyone with that link could play the clip. Bytes in Postgres were rejected, because the database holds rows, not audio files. The host's disk was rejected, because a Vercel Function keeps no disk between requests. The bucket stays private.
 
 ## Image bytes
 
-An image item stores one file in the same private R2 bucket as voice. `POST /items/image` reads the multipart field `image`. The object key in `content` is `{user_id}/{item_id}.jpg`, `.png`, `.webp`, or `.gif`. Jpeg is stored as `.jpg`. The cap is 5 MB. The voice cap stays 15 MB. One shared limit was rejected, because a photo and a ten-minute clip are different sizes.
+An image item stores one file in the same private R2 bucket as voice. `POST /items/image` reads the multipart field `image`. The object key in `content` is `{user_id}/{item_id}.jpg`, `.png`, `.webp`, or `.gif`. Jpeg is stored as `.jpg`. The cap was 5 MB for images and 15 MB for voice. Both are 4 MB now because of Vercel's body limit (see API hosting).
 
 `GET /items/:id/file` streams the image after the same ownership check as voice. The card and the detail view load those bytes with `credentials: "include"`. TanStack Query keeps the blob for this tab under `["item-file", itemId]`. `staleTime` is `Infinity` because the saved file does not change, so opening the card again does not ask the API. The `img` element uses an object URL built from that blob, and the same URL is reused when the view mounts again. The URL is revoked when the query leaves the cache, 5 minutes after nothing on screen is still showing that image. `Cache-Control` stays `private, no-store`. The service worker still does not store the file. The `img` element does not point at the key or at R2. A public image URL was rejected for the same reason as voice playback. A browser HTTP cache was rejected for the same reason: the response is private, and the tab cache already stops the repeat download.
 

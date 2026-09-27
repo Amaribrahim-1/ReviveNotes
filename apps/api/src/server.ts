@@ -2,7 +2,7 @@ import { APP_NAME } from "@revivenotes/shared";
 import { app } from "./app.js";
 import { prisma } from "./db.js";
 
-// Back4App (and most hosts) set PORT. Locally we keep 4000 so the web default still matches.
+// Local run only. On Vercel, src/app.ts is the entry and nothing listens on a port.
 const port = Number(process.env.PORT) || 4000;
 
 app.listen(port, () => {

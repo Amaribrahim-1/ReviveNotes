@@ -28,6 +28,12 @@ import { createTag, deleteTag, listTags, updateTag } from "./tag-routes.js";
 
 export const app = express();
 
+// Vercel overwrites X-Forwarded-For with the real client IP, so req.ip can
+// trust it there. Locally nothing sits in front of the API.
+if (process.env.VERCEL) {
+  app.set("trust proxy", true);
+}
+
 app.use(allowWebOrigin);
 app.use(express.json());
 
@@ -96,3 +102,6 @@ function allowWebOrigin(req: Request, res: Response, next: NextFunction) {
 
   next();
 }
+
+// Vercel looks for a default export in src/app.ts and runs it as one function.
+export default app;

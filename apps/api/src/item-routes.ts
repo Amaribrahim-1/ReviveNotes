@@ -670,7 +670,7 @@ async function createVoiceItem(req: Request, res: Response) {
     res.status(400).json({ error: msg(req, VOICE_EMPTY) });
     return;
   }
-  // Reject the whole clip. Do not keep a 15 MB piece of a larger upload.
+  // Reject the whole clip. Do not keep a capped piece of a larger upload.
   if (file.size > VOICE_MAX_BYTES || file.buffer.length > VOICE_MAX_BYTES) {
     res.status(400).json({ error: msg(req, VOICE_TOO_BIG) });
     return;
@@ -808,7 +808,7 @@ async function createImageItem(req: Request, res: Response) {
     res.status(400).json({ error: msg(req, IMAGE_EMPTY) });
     return;
   }
-  // Reject the whole file. Do not keep a 5 MB piece of a larger upload.
+  // Reject the whole file. Do not keep a capped piece of a larger upload.
   if (file.size > IMAGE_MAX_BYTES || file.buffer.length > IMAGE_MAX_BYTES) {
     res.status(400).json({ error: msg(req, IMAGE_TOO_BIG) });
     return;

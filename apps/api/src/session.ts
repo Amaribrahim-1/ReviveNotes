@@ -19,8 +19,8 @@ const REFRESH_COOKIE = "refresh_token";
 const ACCESS_SECONDS = 15 * 60;
 const REFRESH_MS = 30 * 24 * 60 * 60 * 1000;
 
-// The web app and the API are different sites (different ports, and later
-// Vercel and Back4App). SameSite=None is required for the browser to send
+// The web app and the API are different sites (different ports locally, and
+// two separate *.vercel.app projects when deployed). SameSite=None is required for the browser to send
 // these cookies. Secure stays on because Chromium treats http://localhost
 // as a secure context.
 const cookieOptions = {

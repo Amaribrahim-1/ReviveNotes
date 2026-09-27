@@ -9,8 +9,9 @@ Follow `project-spec.md`. Do not re-litigate the stack.
 
 - Web: Next.js App Router, TypeScript, Tailwind, TanStack Query, React Hook Form, Zod, Zustand.
 - API: Node, Express, TypeScript, Prisma, Zod. JWT via `jsonwebtoken`. Passwords via `bcrypt`.
-- Data: PostgreSQL on Neon through Prisma. Files: Cloudflare R2. Web on Vercel. API on Back4App Containers. Cron: cron-job.org.
-- Do not replace the API with Supabase, Firebase, or another BaaS, and do not move it to Vercel serverless.
+- Data: PostgreSQL on Neon through Prisma. Files: Cloudflare R2. Web on Vercel. API on Vercel as one Express function (separate project, root `apps/api`). Cron: cron-job.org.
+- Do not replace the API with Supabase, Firebase, or another BaaS.
+- Vercel caps a request body at 4.5 MB. File uploads stay at 4 MB or less.
 - Do not add a second always-on service.
 - The API stays client-agnostic so a future non-browser client can call it.
 

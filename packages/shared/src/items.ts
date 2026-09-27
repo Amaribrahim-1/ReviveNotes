@@ -3,9 +3,10 @@ import { z } from "zod";
 export const TEXT_MAX_LENGTH = 10000;
 export const LINK_MAX_LENGTH = 2000;
 export const VOICE_MAX_SECONDS = 600;
-export const VOICE_MAX_BYTES = 15 * 1024 * 1024;
-// A photo cap. The voice cap above is a different number and stays 15 MB.
-export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+// Vercel rejects a request body over 4.5 MB, so each file stays at 4 MB
+// to leave room for the other multipart fields.
+export const VOICE_MAX_BYTES = 4 * 1024 * 1024;
+export const IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 export const IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 
 export const ITEM_STATUSES = ["inbox", "active", "done", "archived"] as const;

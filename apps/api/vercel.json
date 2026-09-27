@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @revivenotes/shared build && pnpm exec prisma generate && pnpm exec prisma migrate deploy",
+  "regions": ["cle1"]
+}

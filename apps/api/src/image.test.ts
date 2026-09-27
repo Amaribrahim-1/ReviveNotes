@@ -154,19 +154,19 @@ describe("image items", () => {
     expect(stored?.last_touched_at.toISOString()).toBe(body.last_touched_at);
   });
 
-  it("accepts an image of exactly 5 MB", async () => {
+  it("accepts an image of exactly 4 MB", async () => {
     const created = await postImage(cookiesA, Buffer.alloc(IMAGE_MAX_BYTES), "image/jpeg");
     expect(created.status).toBe(201);
     expect((created.body as ImageBody).type).toBe("image");
   }, 30_000);
 
-  it("rejects a file over 5 MB and leaves no row and no object", async () => {
+  it("rejects a file over 4 MB and leaves no row and no object", async () => {
     const before = await prisma.item.count({ where: { user_id: userAId } });
     const objectsBefore = store.files.size;
     const tooBig = Buffer.alloc(IMAGE_MAX_BYTES + 1);
     const created = await postImage(cookiesA, tooBig, "image/jpeg");
     expect(created.status).toBe(400);
-    expect(created.body).toEqual({ error: "الصورة أكبر من 5 ميجا" });
+    expect(created.body).toEqual({ error: "الصورة أكبر من 4 ميجا" });
     const after = await prisma.item.count({ where: { user_id: userAId } });
     expect(after).toBe(before);
     expect(store.files.size).toBe(objectsBefore);
