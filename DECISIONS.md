@@ -64,6 +64,10 @@ The database keeps the original UTC instant. The list computes `local_date` when
 
 Entering `done` writes one `done` ClearEvent. A second save that is already `done` does not write another. Leaving `done` deletes that item's `done` events whose `created_at` falls in the current user-day from `getUserDayRange`. Older `done` events stay. Comparing UTC calendar dates was rejected, because Cairo midnight is not UTC midnight. Archive writes no event. Permanent delete writes a `deleted` event first, then deletes the item. Postgres sets that event's `item_id` to null, and the event stays.
 
+## Daily progress count
+
+`GET /progress/today` counts only `done` events in the current user-day whose `item_id` is not null, so the item still exists. A deleted item leaves the count completely, even if it was marked done earlier that day, as if it never existed. The spec first counted `deleted` events as cleared too. That was changed because the label reads "done today", and a delete showed up as a done the user never pressed. The `deleted` event is still written, so no migration was needed. Deleting old events or removing the `deleted` kind was rejected: it needs a migration for no visible gain.
+
 Editing a link URL drops the old `link_preview`, because it described the old URL, then stores a new one when the fetch in the link-preview section succeeds. Voice and image `content` is a private object key, so this patch refuses to replace it. A free-text rewrite of that key was rejected.
 
 ## All-items filters
@@ -197,5 +201,9 @@ Inbox, all notes, and the revival screen show items on a board: a CSS grid with 
 Each card is a sticky note with a pin at the top: text is yellow, link is blue and keeps its preview, voice is pink with a mic icon, and image is a polaroid (a wide `4/3` photo on phones, square from `md`). The type is shown by an icon or content as well as color, so color is not the only clue. Colors are CSS variables per theme. In dark mode the paper is dim with light ink, so bright notes do not glare. A text note now shows up to six lines of its text instead of only the first line.
 
 From `md` up, where notes sit side by side, every note has the same fixed height (`h-56`), so the board looks even. Short content leaves empty paper at the bottom. Line clamps keep the longest content inside: link titles two lines, bare URLs four lines, and the note line under a card one line. The polaroid photo fills the space above its caption. Full text is on the detail page. On phones the notes stack in one column and keep their natural height. Grouping notes by type and equal height only per row were tried and rejected: groups broke the one newest-first flow, and per-row heights still differed from row to row.
+
+A note that has a category shows a small pill in its top corner: the category's color dot and its name. The card reads the categories from the same cached `["categories"]` query the filters use, so a whole board sends one request. Adding the category object to every item in `GET /items` was rejected: it changes the API shape for one small label.
+
+The whole note opens the detail page, not only its text. Text, link, and image notes are already one link. On the voice note the link stretches over the whole paper with an `after:` layer, and the play button sits above that layer so pressing it plays instead of opening.
 
 The tilt is a fixed Tailwind class (`rotate-1`, `-rotate-2`, and so on) picked from a list of five by the card's place in the list. Five is not a multiple of 2, 3, or 4, so a column does not repeat one tilt. It stays at 1 to 2 degrees, straightens on hover and keyboard focus, and turns off with `motion-reduce:`. A random tilt was rejected because it would change on every render. An inline `style` rotation was rejected because the UI uses Tailwind classes only. CSS columns (masonry) was rejected because it fills top to bottom, so the newest notes would not read across the first row.

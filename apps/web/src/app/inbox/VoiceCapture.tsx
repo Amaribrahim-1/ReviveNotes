@@ -189,7 +189,7 @@ export default function VoiceCapture() {
     }, 200);
   }
 
-  let buttonLabel = t("capture_save");
+  let buttonLabel = t("voice_start");
   if (recording) {
     buttonLabel = t("voice_stop_save");
   }

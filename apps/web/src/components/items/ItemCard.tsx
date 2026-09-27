@@ -4,6 +4,7 @@ import type { Item } from "@revivenotes/shared";
 import { Mic } from "lucide-react";
 import Link from "next/link";
 import { useT } from "@/lib/use-t";
+import CardCategory from "./CardCategory";
 import { formatVoiceDuration } from "./format-voice-duration";
 import ItemImage from "./ItemImage";
 import LinkPreviewCard from "./LinkPreviewCard";
@@ -38,6 +39,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
         className={`block bg-rn-photo p-3 md:flex md:flex-col ${noteClass} ${tilt}`}
       >
         <NotePin />
+        <CardCategory categoryId={item.category_id} />
         <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-rn-note-ink/10 text-center text-sm md:aspect-auto md:min-h-0 md:flex-1">
           <ItemImage itemId={item.id} size="thumb" />
         </div>
@@ -50,10 +52,11 @@ export default function ItemCard({ item, index }: ItemCardProps) {
     return (
       <article className={`flex items-center justify-between gap-3 bg-rn-note-pink md:items-start ${paperPaddingClass} ${noteClass} ${tilt}`}>
         <NotePin />
+        <CardCategory categoryId={item.category_id} />
         <Link
           href={`/items/${item.id}`}
           aria-label={`${t("open_note_duration")} ${formatVoiceDuration(item.duration_seconds)}`}
-          className="min-w-0 flex-1 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent"
+          className="min-w-0 flex-1 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent"
         >
           <p className="flex items-center gap-2 text-lg font-medium">
             <Mic className="size-5 shrink-0" aria-hidden="true" />
@@ -63,7 +66,10 @@ export default function ItemCard({ item, index }: ItemCardProps) {
           </p>
           {cardNote(item.note)}
         </Link>
-        <VoicePlayButton itemId={item.id} />
+        {/* The link's after: layer covers the whole note. z-10 keeps the play button pressable above it. */}
+        <div className="relative z-10">
+          <VoicePlayButton itemId={item.id} />
+        </div>
       </article>
     );
   }
@@ -75,6 +81,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
         className={`block min-h-32 bg-rn-note-yellow ${paperPaddingClass} ${noteClass} ${tilt}`}
       >
         <NotePin />
+        <CardCategory categoryId={item.category_id} />
         <p dir="auto" className="line-clamp-6 whitespace-pre-line break-words leading-relaxed">
           {item.content}
         </p>
@@ -92,6 +99,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
       className={`block bg-rn-note-blue ${paperPaddingClass} ${noteClass} ${tilt}`}
     >
       <NotePin />
+      <CardCategory categoryId={item.category_id} />
       {preview ? (
         <LinkPreviewCard preview={preview} />
       ) : (

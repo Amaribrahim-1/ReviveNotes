@@ -168,7 +168,6 @@ export const UI = {
   capture_link: { ar: "رابط", en: "Link" },
   capture_voice: { ar: "صوت", en: "Voice" },
   capture_image: { ar: "صورة", en: "Image" },
-  capture_save: { ar: "سجّل", en: "Save" },
   pick_image: { ar: "اختار صورة", en: "Pick an image" },
   image_note_alt: { ar: "صورة الملاحظة", en: "Note image" },
   open_image: { ar: "فتح صورة الملاحظة", en: "Open note image" },
@@ -181,7 +180,7 @@ export const UI = {
   },
 
   voice_duration: { ar: "المدة", en: "Length" },
-  voice_start: { ar: "تسجيل", en: "Record" },
+  voice_start: { ar: "ابدأ التسجيل", en: "Record" },
   voice_stop_save: { ar: "إيقاف وحفظ", en: "Stop and save" },
   voice_stop: { ar: "إيقاف التسجيل", en: "Stop recording" },
   voice_play: { ar: "تشغيل التسجيل", en: "Play recording" },

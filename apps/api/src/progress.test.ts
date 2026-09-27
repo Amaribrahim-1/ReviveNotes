@@ -83,19 +83,26 @@ describe("GET /progress/today", () => {
     expect(await readCleared(cookiesA)).toBe(before);
   });
 
-  it("counts a deleted event after the item row is gone", async () => {
+  it("does not count a deleted item, even one that was done today", async () => {
     const before = await readCleared(cookiesA);
-    const itemId = await createText(cookiesA, "هتتحذف النهاردة");
+    const openId = await createText(cookiesA, "هتتحذف النهاردة");
+    const doneId = await createText(cookiesA, "خلصت وبعدين اتحذفت");
 
-    const deleted = await request(app).delete(`/items/${itemId}`).set("Cookie", cookiesA);
-    expect(deleted.status).toBe(204);
+    const done = await request(app).patch(`/items/${doneId}`).set("Cookie", cookiesA).send({ status: "done" });
+    expect(done.status).toBe(200);
+    expect(await readCleared(cookiesA)).toBe(before + 1);
 
-    const stored = await prisma.item.findFirst({
-      where: { id: itemId },
+    const deletedOpen = await request(app).delete(`/items/${openId}`).set("Cookie", cookiesA);
+    expect(deletedOpen.status).toBe(204);
+    const deletedDone = await request(app).delete(`/items/${doneId}`).set("Cookie", cookiesA);
+    expect(deletedDone.status).toBe(204);
+
+    const stored = await prisma.item.findMany({
+      where: { id: { in: [openId, doneId] } },
       select: { id: true },
     });
-    expect(stored).toBeNull();
-    expect(await readCleared(cookiesA)).toBe(before + 1);
+    expect(stored).toEqual([]);
+    expect(await readCleared(cookiesA)).toBe(before);
   });
 
   it("does not count an archived item", async () => {
