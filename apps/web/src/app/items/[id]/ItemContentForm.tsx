@@ -67,6 +67,7 @@ export default function ItemContentForm({ item, pending, onSave, onInvalid }: It
             id="item-content"
             rows={4}
             maxLength={TEXT_MAX_LENGTH}
+            dir="auto"
             className={fieldClass}
             {...form.register("content")}
           />

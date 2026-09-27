@@ -163,3 +163,15 @@ A Next.js middleware or server check was rejected. The cookies belong to the API
 Register sends `Africa/Cairo` instead of the browser's timezone, and settings no longer show a timezone picker. The day-start hour stays. One migration sets every existing user's `timezone` to `Africa/Cairo`. It changes only that column. Stored UTC timestamps stay as they are, and "today" is still computed at read time, so old notes simply group by Cairo days now. Reminder times are read as Cairo times from then on.
 
 The API did not change. `POST /auth/register` and `PATCH /me` still accept any IANA timezone, so another client could send a different one later. The settings screen sends the user's saved timezone back unchanged when it saves. Removing the column, or hard-coding Cairo inside the API, was rejected: it would lock every future client to one zone.
+
+## Auto text direction
+
+Every field where the user types words (text note, note, category name) and every place that shows those words (card text, card note, category name) has `dir="auto"`. The browser looks at the first strong letter: Arabic starts the line from the right, English from the left. So `ماب training` reads right to left and `training ماب` reads left to right, whatever the UI language is. URL fields and URL text stay `dir="ltr"`.
+
+The attribute sits on the element that holds the user's text, not on the page. The page keeps `rtl` for the Arabic UI and `ltr` for the English UI, so labels and buttons do not jump around. Detecting the direction in JavaScript was rejected: the browser already does it, and it updates while the user types.
+
+## Hidden tags
+
+Tags are gone from the screens: no tag picker on the detail page, no tag filter on all notes, and no tag section on the categories page. The UI code for them was removed, not hidden with CSS, so no dead components stay behind. Git history keeps them if tags come back.
+
+Tags still live in the database, the API, the shared schemas, and the API tests. Saving an item from the detail page sends only the changed field, so an item that already has tags keeps them. Dropping the tables or the routes was rejected: it would need a migration and would break any other client that already uses tags.

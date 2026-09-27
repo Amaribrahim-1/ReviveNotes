@@ -57,7 +57,7 @@ export default function ItemCard({ item }: ItemCardProps) {
       ) : (
         <p
           className={item.type === "link" ? "break-all" : "break-words leading-relaxed"}
-          dir={item.type === "link" ? "ltr" : undefined}
+          dir={item.type === "link" ? "ltr" : "auto"}
         >
           {cardText(item, t("type_unknown").replace(/\.$/, ""))}
         </p>
@@ -82,5 +82,9 @@ function cardNote(note: string | null) {
   if (!note) {
     return null;
   }
-  return <p className={`mt-2 break-words text-sm ${mutedClass}`}>{note.split(/\r?\n/)[0] ?? note}</p>;
+  return (
+    <p dir="auto" className={`mt-2 break-words text-sm ${mutedClass}`}>
+      {note.split(/\r?\n/)[0] ?? note}
+    </p>
+  );
 }

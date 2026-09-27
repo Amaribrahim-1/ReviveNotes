@@ -16,24 +16,20 @@ type ItemListProps = {
   status?: ItemStatus;
   type?: ItemType;
   categoryId?: string;
-  tagIds?: string[];
   emptyText: string;
 };
 
-export default function ItemList({ status, type, categoryId, tagIds, emptyText }: ItemListProps) {
+export default function ItemList({ status, type, categoryId, emptyText }: ItemListProps) {
   const { t, locale } = useT();
-  const tags = [...(tagIds ?? [])].sort();
-  const activeTags = tags.length > 0 ? tags : undefined;
 
   const items = useInfiniteQuery({
-    queryKey: ["items", status ?? null, type ?? null, categoryId ?? null, activeTags ?? null],
+    queryKey: ["items", status ?? null, type ?? null, categoryId ?? null],
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }): Promise<ItemPage> => {
       const parsed = itemListQuerySchema.parse({
         status,
         type,
         category_id: categoryId,
-        tag: activeTags,
         cursor: pageParam ?? undefined,
       });
       const params = new URLSearchParams();
@@ -45,9 +41,6 @@ export default function ItemList({ status, type, categoryId, tagIds, emptyText }
       }
       if (parsed.category_id) {
         params.set("category_id", parsed.category_id);
-      }
-      for (const tagId of parsed.tag ?? []) {
-        params.append("tag", tagId);
       }
       if (parsed.cursor) {
         params.set("cursor", parsed.cursor);

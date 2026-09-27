@@ -1,6 +1,6 @@
 "use client";
 
-import { ITEM_STATUSES, ITEM_TYPES, type Category, type ItemStatus, type ItemType, type Tag } from "@revivenotes/shared";
+import { ITEM_STATUSES, ITEM_TYPES, type Category, type ItemStatus, type ItemType } from "@revivenotes/shared";
 import { useQuery } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/api";
 import { alertClass, fieldClass, labelClass, mutedClass } from "@/lib/ui-classes";
@@ -41,11 +41,9 @@ export default function ItemFilters() {
   const categoryId = useItemFilters((state) => state.categoryId);
   const status = useItemFilters((state) => state.status);
   const type = useItemFilters((state) => state.type);
-  const tagIds = useItemFilters((state) => state.tagIds);
   const setCategoryId = useItemFilters((state) => state.setCategoryId);
   const setStatus = useItemFilters((state) => state.setStatus);
   const setType = useItemFilters((state) => state.setType);
-  const toggleTag = useItemFilters((state) => state.toggleTag);
 
   const categories = useQuery({
     queryKey: ["categories"],
@@ -56,18 +54,6 @@ export default function ItemFilters() {
         throw new Error(await apiError(response));
       }
       return response.json() as Promise<Category[]>;
-    },
-  });
-
-  const tags = useQuery({
-    queryKey: ["tags"],
-    retry: false,
-    queryFn: async (): Promise<Tag[]> => {
-      const response = await api("/tags");
-      if (!response.ok) {
-        throw new Error(await apiError(response));
-      }
-      return response.json() as Promise<Tag[]>;
     },
   });
 
@@ -137,28 +123,6 @@ export default function ItemFilters() {
           ))}
         </select>
       </div>
-
-      <fieldset className="flex flex-col gap-1">
-        <legend className={labelClass}>{t("tag_legend")}</legend>
-        {tags.isPending ? <p className={mutedClass}>{t("loading_tags")}</p> : null}
-        {tags.isError ? (
-          <p className={alertClass} role="alert">
-            {tags.error instanceof Error ? tags.error.message : t("generic_error")}
-          </p>
-        ) : null}
-        {tags.data && tags.data.length === 0 ? <p className={mutedClass}>{t("no_tags_yet")}</p> : null}
-        {tags.data?.map((tag) => (
-          <label key={tag.id} className="flex items-center gap-2 py-1">
-            <input
-              type="checkbox"
-              checked={tagIds.includes(tag.id)}
-              onChange={() => toggleTag(tag.id)}
-              className="h-4 w-4"
-            />
-            <span>{tag.name}</span>
-          </label>
-        ))}
-      </fieldset>
     </div>
   );
 }

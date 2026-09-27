@@ -209,6 +209,7 @@ export default function VoiceCapture() {
           rows={3}
           maxLength={TEXT_MAX_LENGTH}
           disabled={uploading}
+          dir="auto"
           className={fieldClass}
         />
       </div>

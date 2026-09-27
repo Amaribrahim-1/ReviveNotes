@@ -116,6 +116,7 @@ export default function ImageCapture() {
           rows={3}
           maxLength={TEXT_MAX_LENGTH}
           disabled={uploading}
+          dir="auto"
           className={fieldClass}
           value={note}
           onChange={(event) => setNote(event.target.value)}

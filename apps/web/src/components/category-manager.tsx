@@ -199,7 +199,6 @@ export function CategoryManager() {
 
   return (
     <section className={`${surfacePanelClass} flex flex-col gap-4`}>
-      <h2 className="text-xl font-semibold tracking-tight">{t("categories")}</h2>
       <form className="flex flex-col gap-4" noValidate onSubmit={form.handleSubmit(onCreate)}>
         <div>
           <label className={labelClass} htmlFor="new-category-name">
@@ -209,6 +208,7 @@ export function CategoryManager() {
             id="new-category-name"
             type="text"
             autoComplete="off"
+            dir="auto"
             className={fieldClass}
             {...form.register("name")}
           />
@@ -252,6 +252,7 @@ export function CategoryManager() {
                         id="edit-category-name"
                         type="text"
                         autoComplete="off"
+                        dir="auto"
                         className={fieldClass}
                         {...editForm.register("name")}
                       />
@@ -276,7 +277,7 @@ export function CategoryManager() {
                       <span
                         className={`inline-block h-4 w-4 rounded-full ${color ? categoryColorClass[color] : "bg-rn-border"}`}
                       />
-                      <span>{category.name}</span>
+                      <span dir="auto">{category.name}</span>
                       {color ? <span className="text-sm text-rn-muted">{categoryColorLabel(locale, color)}</span> : null}
                     </div>
                     <div className="flex flex-wrap gap-2">

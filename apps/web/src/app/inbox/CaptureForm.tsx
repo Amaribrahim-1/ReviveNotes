@@ -107,6 +107,7 @@ export default function CaptureForm() {
             id="capture-text"
             rows={4}
             maxLength={TEXT_MAX_LENGTH}
+            dir="auto"
             className={fieldClass}
             {...form.register("content")}
           />
@@ -138,6 +139,7 @@ export default function CaptureForm() {
               id="capture-link-note"
               rows={3}
               maxLength={TEXT_MAX_LENGTH}
+              dir="auto"
               className={fieldClass}
               {...form.register("note")}
             />

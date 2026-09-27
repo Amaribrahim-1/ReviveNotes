@@ -22,7 +22,6 @@ import ItemContentForm from "./ItemContentForm";
 import ItemDeleteButton from "./ItemDeleteButton";
 import ItemNoteForm from "./ItemNoteForm";
 import ItemStatusControls from "./ItemStatusControls";
-import ItemTagField from "./ItemTagField";
 import { translateIssue, useT } from "@/lib/use-t";
 
 type ItemDetailProps = {
@@ -197,13 +196,6 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
         }}
       />
       <ItemCategoryField
-        item={item.data}
-        pending={pending}
-        onSave={(patch) => {
-          void save(patch);
-        }}
-      />
-      <ItemTagField
         item={item.data}
         pending={pending}
         onSave={(patch) => {

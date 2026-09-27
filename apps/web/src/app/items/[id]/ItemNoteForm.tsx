@@ -45,6 +45,7 @@ export default function ItemNoteForm({ item, pending, onSave, onInvalid }: ItemN
           id="item-note"
           rows={4}
           maxLength={TEXT_MAX_LENGTH}
+          dir="auto"
           className={fieldClass}
           {...form.register("note")}
         />
