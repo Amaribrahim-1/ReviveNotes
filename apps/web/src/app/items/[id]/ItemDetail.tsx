@@ -94,6 +94,7 @@ export default function ItemDetail({ itemId }: ItemDetailProps) {
         queryClient.removeQueries({ queryKey: ["item", itemId] });
         await queryClient.invalidateQueries({ queryKey: ["items"] });
         await queryClient.invalidateQueries({ queryKey: ["progress"] });
+        await queryClient.invalidateQueries({ queryKey: ["revival"] });
         toast.success(t("deleted"), { id: toastId });
         router.push("/inbox");
         return;

@@ -10,6 +10,7 @@ import ItemImage from "./ItemImage";
 import LinkPreviewCard from "./LinkPreviewCard";
 import NotePin from "./NotePin";
 import VoicePlayButton from "./VoicePlayButton";
+import ItemCardDelete from "./ItemCardDelete";
 
 type ItemCardProps = {
   item: Item;
@@ -35,18 +36,23 @@ export default function ItemCard({ item, index }: ItemCardProps) {
 
   if (item.type === "image") {
     return (
-      <Link
-        href={`/items/${item.id}`}
-        aria-label={t("open_image")}
-        className={`block bg-rn-photo ${photoPaddingClass} md:flex md:flex-col ${noteClass} ${tilt}`}
-      >
+      <article className={`block bg-rn-photo ${photoPaddingClass} md:flex md:flex-col ${noteClass} ${tilt}`}>
         <NotePin />
         <CardCategory categoryId={item.category_id} />
-        <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-rn-note-ink/10 text-center text-sm md:aspect-auto md:min-h-0 md:flex-1">
-          <ItemImage itemId={item.id} size="thumb" />
+        <Link
+          href={`/items/${item.id}`}
+          aria-label={t("open_image")}
+          className="after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent flex flex-col md:flex-1"
+        >
+          <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-rn-note-ink/10 text-center text-sm md:aspect-auto md:min-h-0 md:flex-1">
+            <ItemImage itemId={item.id} size="thumb" />
+          </div>
+          <div className="min-h-8 md:shrink-0">{cardNote(item.note)}</div>
+        </Link>
+        <div className="absolute top-2 end-2 z-10">
+          <ItemCardDelete item={item} />
         </div>
-        <div className="min-h-8 md:shrink-0">{cardNote(item.note)}</div>
-      </Link>
+      </article>
     );
   }
 
@@ -72,22 +78,30 @@ export default function ItemCard({ item, index }: ItemCardProps) {
         <div className="relative z-10">
           <VoicePlayButton itemId={item.id} />
         </div>
+        <div className="absolute top-2 end-2 z-10">
+          <ItemCardDelete item={item} />
+        </div>
       </article>
     );
   }
 
   if (item.type === "text") {
     return (
-      <Link
-        href={`/items/${item.id}`}
-        className={`block min-h-32 bg-rn-note-yellow ${paperPaddingClass} ${noteClass} ${tilt}`}
-      >
+      <article className={`block min-h-32 bg-rn-note-yellow ${paperPaddingClass} ${noteClass} ${tilt}`}>
         <NotePin />
         <CardCategory categoryId={item.category_id} />
-        <p dir="auto" className="line-clamp-6 whitespace-pre-line break-words leading-relaxed">
-          {item.content}
-        </p>
-      </Link>
+        <Link
+          href={`/items/${item.id}`}
+          className="after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent block"
+        >
+          <p dir="auto" className="line-clamp-6 whitespace-pre-line break-words leading-relaxed">
+            {item.content}
+          </p>
+        </Link>
+        <div className="absolute top-2 end-2 z-10">
+          <ItemCardDelete item={item} />
+        </div>
+      </article>
     );
   }
 
@@ -95,22 +109,27 @@ export default function ItemCard({ item, index }: ItemCardProps) {
   const previewText = preview?.title ?? preview?.site_name ?? preview?.description ?? null;
 
   return (
-    <Link
-      href={`/items/${item.id}`}
-      aria-label={preview && !previewText ? item.content : undefined}
-      className={`block bg-rn-note-blue ${paperPaddingClass} ${noteClass} ${tilt}`}
-    >
+    <article className={`block bg-rn-note-blue ${paperPaddingClass} ${noteClass} ${tilt}`}>
       <NotePin />
       <CardCategory categoryId={item.category_id} />
-      {preview ? (
-        <LinkPreviewCard preview={preview} />
-      ) : (
-        <p dir="ltr" className="break-all md:line-clamp-4">
-          {item.content}
-        </p>
-      )}
-      {cardNote(item.note)}
-    </Link>
+      <Link
+        href={`/items/${item.id}`}
+        aria-label={preview && !previewText ? item.content : undefined}
+        className="after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent block"
+      >
+        {preview ? (
+          <LinkPreviewCard preview={preview} />
+        ) : (
+          <p dir="ltr" className="break-all md:line-clamp-4">
+            {item.content}
+          </p>
+        )}
+        {cardNote(item.note)}
+      </Link>
+      <div className="absolute top-2 end-2 z-10">
+        <ItemCardDelete item={item} />
+      </div>
+    </article>
   );
 }
 
