@@ -5,13 +5,19 @@ import {
   type ItemPage,
   type ItemStatus,
   type ItemType,
+  type Category,
+  type Item,
 } from "@revivenotes/shared";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { Fragment } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Fragment, useState } from "react";
 import { api, apiError } from "@/lib/api";
 import { alertClass, boardClass, buttonSecondaryClass, mutedClass } from "@/lib/ui-classes";
 import { useT } from "@/lib/use-t";
 import ItemCard from "./ItemCard";
+import DeleteConfirmModal from "./DeleteConfirmModal";
+import DragAndDropBoard from "./DragAndDropBoard";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type ItemListProps = {
   status?: ItemStatus;
@@ -22,6 +28,12 @@ type ItemListProps = {
 
 export default function ItemList({ status, type, categoryId, emptyText }: ItemListProps) {
   const { t, locale } = useT();
+  const queryClient = useQueryClient();
+
+  // Item selected for deletion via drag-to-delete zone.
+  const [pendingDeleteItem, setPendingDeleteItem] = useState<Item | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const items = useInfiniteQuery({
     queryKey: ["items", status ?? null, type ?? null, categoryId ?? null],
@@ -55,6 +67,44 @@ export default function ItemList({ status, type, categoryId, emptyText }: ItemLi
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
   });
 
+  // Fetch categories for the drop strip.
+  const categories = useQuery({
+    queryKey: ["categories"],
+    retry: false,
+    queryFn: async (): Promise<Category[]> => {
+      const response = await api("/categories");
+      if (!response.ok) {
+        throw new Error(await apiError(response));
+      }
+      return response.json() as Promise<Category[]>;
+    },
+  });
+
+  async function confirmDelete() {
+    if (!pendingDeleteItem) return;
+    setDeleting(true);
+    const toastId = toast.loading(t("deleting"));
+    try {
+      const response = await api(`/items/${pendingDeleteItem.id}`, { method: "DELETE" });
+      if (response.status === 204) {
+        queryClient.removeQueries({ queryKey: ["item", pendingDeleteItem.id] });
+        await queryClient.invalidateQueries({ queryKey: ["items"] });
+        await queryClient.invalidateQueries({ queryKey: ["progress"] });
+        await queryClient.invalidateQueries({ queryKey: ["revival"] });
+        toast.success(t("deleted"), { id: toastId });
+        setDeleteModalOpen(false);
+        setPendingDeleteItem(null);
+        return;
+      }
+      const message = await apiError(response);
+      toast.error(message, { id: toastId });
+    } catch {
+      toast.error(t("offline"), { id: toastId });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (items.isPending) {
     return <p className={mutedClass}>{t("loading_items")}</p>;
   }
@@ -68,31 +118,42 @@ export default function ItemList({ status, type, categoryId, emptyText }: ItemLi
   }
 
   const rows = items.data.pages.flatMap((page) => page.items);
+  const resolvedCategories = categories.data ?? [];
 
   return (
     <div className="flex flex-col gap-4">
-      {rows.length === 0 ? (
-        <p className={mutedClass}>{emptyText}</p>
-      ) : (
-        <ul className={boardClass}>
-          {rows.map((item, index) => {
-            const previous = rows[index - 1];
-            const showDayLabel = previous === undefined || previous.local_date !== item.local_date;
-            return (
-              <Fragment key={item.id}>
-                {showDayLabel ? (
-                  <li className="col-span-full">
-                    <h2 className={`text-sm font-medium ${mutedClass}`}>{dayLabel(item.local_date, locale)}</h2>
+      <DragAndDropBoard
+        items={rows}
+        categories={resolvedCategories}
+        onRequestDelete={(item) => {
+          setPendingDeleteItem(item);
+          setDeleteModalOpen(true);
+        }}
+      >
+        {rows.length === 0 ? (
+          <p className={mutedClass}>{emptyText}</p>
+        ) : (
+          <ul className={boardClass}>
+            {rows.map((item, index) => {
+              const previous = rows[index - 1];
+              const showDayLabel = previous === undefined || previous.local_date !== item.local_date;
+              return (
+                <Fragment key={item.id}>
+                  {showDayLabel ? (
+                    <li className="col-span-full">
+                      <h2 className={`text-sm font-medium ${mutedClass}`}>{dayLabel(item.local_date, locale)}</h2>
+                    </li>
+                  ) : null}
+                  <li>
+                    <ItemCard item={item} index={index} />
                   </li>
-                ) : null}
-                <li>
-                  <ItemCard item={item} index={index} />
-                </li>
-              </Fragment>
-            );
-          })}
-        </ul>
-      )}
+                </Fragment>
+              );
+            })}
+          </ul>
+        )}
+      </DragAndDropBoard>
+
       {items.hasNextPage ? (
         <button
           type="button"
@@ -105,6 +166,19 @@ export default function ItemList({ status, type, categoryId, emptyText }: ItemLi
           {items.isFetchingNextPage ? t("loading") : t("show_more")}
         </button>
       ) : null}
+
+      {/* Modal used when item is dragged to the delete zone */}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          if (!deleting) {
+            setDeleteModalOpen(false);
+            setPendingDeleteItem(null);
+          }
+        }}
+        onConfirm={confirmDelete}
+        pending={deleting}
+      />
     </div>
   );
 }

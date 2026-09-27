@@ -1,6 +1,8 @@
 "use client";
 
 import type { Item } from "@revivenotes/shared";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { Mic } from "lucide-react";
 import Link from "next/link";
 import { useT } from "@/lib/use-t";
@@ -16,6 +18,8 @@ type ItemCardProps = {
   item: Item;
   /** Place of the card in its list. It picks the note's tilt. */
   index: number;
+  /** True when rendered inside DragOverlay – skips the useDraggable hook to avoid nesting. */
+  isDragOverlay?: boolean;
 };
 
 // Five is not a multiple of 2, 3, or 4, so one board column does not repeat the same tilt all the way down.
@@ -26,7 +30,47 @@ const tilts = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-1", "rotate-2"];
 const noteClass =
   "relative rounded-sm text-rn-note-ink md:h-56 shadow-[0_10px_18px_-10px_rgb(0_0_0_/_0.45),0_1px_3px_rgb(0_0_0_/_0.1)] transition hover:rotate-0 hover:shadow-[0_16px_26px_-12px_rgb(0_0_0_/_0.5),0_2px_4px_rgb(0_0_0_/_0.1)] focus-within:rotate-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rn-accent motion-reduce:rotate-0 motion-reduce:transition-none dark:shadow-[0_10px_20px_-8px_rgb(0_0_0_/_0.8)] dark:hover:shadow-[0_16px_28px_-10px_rgb(0_0_0_/_0.9)]";
 
-export default function ItemCard({ item, index }: ItemCardProps) {
+function DraggableWrapper({
+  id,
+  isDragOverlay,
+  children,
+}: {
+  id: string;
+  isDragOverlay?: boolean;
+  children: (dragProps: {
+    ref: ((node: HTMLElement | null) => void) | null;
+    style: React.CSSProperties;
+    isDragging: boolean;
+    handleProps: Record<string, unknown>;
+  }) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    // While this specific item is being dragged (not the overlay), dim it slightly.
+    opacity: isDragging ? 0.35 : undefined,
+    touchAction: "none",
+  };
+
+  if (isDragOverlay) {
+    // DragOverlay already renders the item without dnd hooks.
+    return <>{children({ ref: null, style: {}, isDragging: false, handleProps: {} })}</>;
+  }
+
+  return (
+    <>
+      {children({
+        ref: setNodeRef,
+        style,
+        isDragging,
+        handleProps: { ...attributes, ...listeners },
+      })}
+    </>
+  );
+}
+
+export default function ItemCard({ item, index, isDragOverlay }: ItemCardProps) {
   const { t } = useT();
   const tilt = tilts[index % tilts.length];
   // A note with a category gets a taller top strip, so the category pill sits above the content.
@@ -36,73 +80,113 @@ export default function ItemCard({ item, index }: ItemCardProps) {
 
   if (item.type === "image") {
     return (
-      <article className={`block bg-rn-photo ${photoPaddingClass} md:flex md:flex-col ${noteClass} ${tilt}`}>
-        <NotePin />
-        <CardCategory categoryId={item.category_id} />
-        <Link
-          href={`/items/${item.id}`}
-          aria-label={t("open_image")}
-          className="after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent flex flex-col md:flex-1"
-        >
-          <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-rn-note-ink/10 text-center text-sm md:aspect-auto md:min-h-0 md:flex-1">
-            <ItemImage itemId={item.id} size="thumb" />
-          </div>
-          <div className="min-h-8 md:shrink-0">{cardNote(item.note)}</div>
-        </Link>
-        <div className="absolute bottom-2 left-2 z-10">
-          <ItemCardDelete item={item} />
-        </div>
-      </article>
+      <DraggableWrapper id={item.id} isDragOverlay={isDragOverlay}>
+        {({ ref, style, handleProps }) => (
+          <article
+            ref={ref}
+            style={style}
+            className={`block bg-rn-photo ${photoPaddingClass} md:flex md:flex-col ${noteClass} ${tilt}`}
+          >
+            {/* Drag handle – the whole card acts as a handle except interactive children */}
+            <div
+              {...handleProps}
+              aria-label={t("drag_note")}
+              className="absolute inset-0 z-0 cursor-grab rounded-sm active:cursor-grabbing"
+            />
+            <NotePin />
+            <CardCategory categoryId={item.category_id} />
+            <Link
+              href={`/items/${item.id}`}
+              aria-label={t("open_image")}
+              className="relative z-10 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent flex flex-col md:flex-1"
+            >
+              <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-rn-note-ink/10 text-center text-sm md:aspect-auto md:min-h-0 md:flex-1">
+                <ItemImage itemId={item.id} size="thumb" />
+              </div>
+              <div className="min-h-8 md:shrink-0">{cardNote(item.note)}</div>
+            </Link>
+            <div className="absolute bottom-2 left-2 z-10">
+              <ItemCardDelete item={item} />
+            </div>
+          </article>
+        )}
+      </DraggableWrapper>
     );
   }
 
   if (item.type === "voice") {
     return (
-      <article className={`flex flex-col bg-rn-note-pink ${paperPaddingClass} ${noteClass} ${tilt}`}>
-        <NotePin />
-        <CardCategory categoryId={item.category_id} />
-        <Link
-          href={`/items/${item.id}`}
-          aria-label={`${t("open_note_duration")} ${formatVoiceDuration(item.duration_seconds)}`}
-          className="mb-4 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent flex-1 block"
-        >
-          {cardNote(item.note) || (
-            <div className="flex items-center gap-2 text-lg font-medium text-rn-note-ink">
-              <Mic className="size-5 shrink-0" aria-hidden="true" />
-              <span dir="ltr" className="tabular-nums">
-                {formatVoiceDuration(item.duration_seconds)}
-              </span>
+      <DraggableWrapper id={item.id} isDragOverlay={isDragOverlay}>
+        {({ ref, style, handleProps }) => (
+          <article
+            ref={ref}
+            style={style}
+            className={`flex flex-col bg-rn-note-pink ${paperPaddingClass} ${noteClass} ${tilt}`}
+          >
+            <div
+              {...handleProps}
+              aria-label={t("drag_note")}
+              className="absolute inset-0 z-0 cursor-grab rounded-sm active:cursor-grabbing"
+            />
+            <NotePin />
+            <CardCategory categoryId={item.category_id} />
+            <Link
+              href={`/items/${item.id}`}
+              aria-label={`${t("open_note_duration")} ${formatVoiceDuration(item.duration_seconds)}`}
+              className="relative z-10 mb-4 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent flex-1 block"
+            >
+              {cardNote(item.note) || (
+                <div className="flex items-center gap-2 text-lg font-medium text-rn-note-ink">
+                  <Mic className="size-5 shrink-0" aria-hidden="true" />
+                  <span dir="ltr" className="tabular-nums">
+                    {formatVoiceDuration(item.duration_seconds)}
+                  </span>
+                </div>
+              )}
+            </Link>
+            {/* The link's after: layer covers the whole note. z-10 keeps the play button pressable above it. */}
+            <div className="relative z-10 w-full mb-6 mt-auto">
+              <VoicePlayer itemId={item.id} durationSeconds={item.duration_seconds ?? 0} />
             </div>
-          )}
-        </Link>
-        {/* The link's after: layer covers the whole note. z-10 keeps the play button pressable above it. */}
-        <div className="relative z-10 w-full mb-6 mt-auto">
-          <VoicePlayer itemId={item.id} durationSeconds={item.duration_seconds ?? 0} />
-        </div>
-        <div className="absolute bottom-2 left-2 z-10">
-          <ItemCardDelete item={item} />
-        </div>
-      </article>
+            <div className="absolute bottom-2 left-2 z-10">
+              <ItemCardDelete item={item} />
+            </div>
+          </article>
+        )}
+      </DraggableWrapper>
     );
   }
 
   if (item.type === "text") {
     return (
-      <article className={`block min-h-32 bg-rn-note-yellow ${paperPaddingClass} ${noteClass} ${tilt}`}>
-        <NotePin />
-        <CardCategory categoryId={item.category_id} />
-        <Link
-          href={`/items/${item.id}`}
-          className="after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent block"
-        >
-          <p dir="auto" className="line-clamp-6 whitespace-pre-line break-words leading-relaxed">
-            {item.content}
-          </p>
-        </Link>
-        <div className="absolute bottom-2 left-2 z-10">
-          <ItemCardDelete item={item} />
-        </div>
-      </article>
+      <DraggableWrapper id={item.id} isDragOverlay={isDragOverlay}>
+        {({ ref, style, handleProps }) => (
+          <article
+            ref={ref}
+            style={style}
+            className={`block min-h-32 bg-rn-note-yellow ${paperPaddingClass} ${noteClass} ${tilt}`}
+          >
+            <div
+              {...handleProps}
+              aria-label={t("drag_note")}
+              className="absolute inset-0 z-0 cursor-grab rounded-sm active:cursor-grabbing"
+            />
+            <NotePin />
+            <CardCategory categoryId={item.category_id} />
+            <Link
+              href={`/items/${item.id}`}
+              className="relative z-10 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent block"
+            >
+              <p dir="auto" className="line-clamp-6 whitespace-pre-line break-words leading-relaxed">
+                {item.content}
+              </p>
+            </Link>
+            <div className="absolute bottom-2 left-2 z-10">
+              <ItemCardDelete item={item} />
+            </div>
+          </article>
+        )}
+      </DraggableWrapper>
     );
   }
 
@@ -110,27 +194,40 @@ export default function ItemCard({ item, index }: ItemCardProps) {
   const previewText = preview?.title ?? preview?.site_name ?? preview?.description ?? null;
 
   return (
-    <article className={`block bg-rn-note-blue ${paperPaddingClass} ${noteClass} ${tilt}`}>
-      <NotePin />
-      <CardCategory categoryId={item.category_id} />
-      <Link
-        href={`/items/${item.id}`}
-        aria-label={preview && !previewText ? item.content : undefined}
-        className="after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent block"
-      >
-        {preview ? (
-          <LinkPreviewCard preview={preview} />
-        ) : (
-          <p dir="ltr" className="break-all md:line-clamp-4">
-            {item.content}
-          </p>
-        )}
-        {cardNote(item.note)}
-      </Link>
-      <div className="absolute bottom-2 left-2 z-10">
-        <ItemCardDelete item={item} />
-      </div>
-    </article>
+    <DraggableWrapper id={item.id} isDragOverlay={isDragOverlay}>
+      {({ ref, style, handleProps }) => (
+        <article
+          ref={ref}
+          style={style}
+          className={`block bg-rn-note-blue ${paperPaddingClass} ${noteClass} ${tilt}`}
+        >
+          <div
+            {...handleProps}
+            aria-label={t("drag_note")}
+            className="absolute inset-0 z-0 cursor-grab rounded-sm active:cursor-grabbing"
+          />
+          <NotePin />
+          <CardCategory categoryId={item.category_id} />
+          <Link
+            href={`/items/${item.id}`}
+            aria-label={preview && !previewText ? item.content : undefined}
+            className="relative z-10 after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-rn-accent block"
+          >
+            {preview ? (
+              <LinkPreviewCard preview={preview} />
+            ) : (
+              <p dir="ltr" className="break-all md:line-clamp-4">
+                {item.content}
+              </p>
+            )}
+            {cardNote(item.note)}
+          </Link>
+          <div className="absolute bottom-2 left-2 z-10">
+            <ItemCardDelete item={item} />
+          </div>
+        </article>
+      )}
+    </DraggableWrapper>
   );
 }
 

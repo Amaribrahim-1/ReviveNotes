@@ -142,6 +142,8 @@ export const UI = {
     en: "Delete this category? Notes stay, with no category.",
   },
   deleted: { ar: "اتحذفت", en: "Deleted" },
+  drag_note: { ar: "اسحب الملاحظة", en: "Drag note" },
+  drag_to_category: { ar: "اسحب على:", en: "Drop on:" },
   no_categories_yet: { ar: "لسه مفيش تصنيفات.", en: "No categories yet." },
   loading_categories: { ar: "بنحمّل التصنيفات...", en: "Loading categories..." },
   loading_items: { ar: "بنحمّل الملاحظات...", en: "Loading notes..." },
