@@ -51,6 +51,7 @@ export const UI = {
 
   progress_cleared: { ar: "خلّصت النهارده", en: "Done today" },
   progress_error: { ar: "مش قادرين نجيب العدّاد", en: "Cannot load today's count" },
+  progress_of: { ar: "من", en: "of" },
 
   share_holding_login: {
     ar: "فيه رابط مستني. هيتحفظ في الوارد بعد الدخول.",

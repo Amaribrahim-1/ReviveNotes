@@ -14,8 +14,8 @@ If time slips, skip from the end: T24, then T22.
 | T19 | Board with pinned sticky notes | T17, T18 |
 | T20 | Delete from the card with a confirm modal | T19 |
 | T21 | Real voice player | T19 |
-| T23 | Real progress bar | T18 |
-| T24 | Better link preview | None |
+| T22 | Real progress bar | T18 |
+| T23 | Better link preview | None |
 
 ## T16 — Stay signed in and Egypt time
 
@@ -113,7 +113,7 @@ If time slips, skip from the end: T24, then T22.
 1. Play a voice note on the card, pause, drag the seek bar, resume from there.
 2. Edge: play it, open the detail page, play again. After returning, `last_touched_at` did not change (revival order is the same).
 
-## T23 — Real progress bar
+## T22 — Real progress bar
 
 **Do**
 - `GET /progress/today` returns `{ cleared, open }`. `open` is the count of items whose status is `inbox` or `active` right now. `cleared` stays as today.
@@ -130,7 +130,7 @@ If time slips, skip from the end: T24, then T22.
 1. Mark one item done: the bar grows and the label changes, for example `1 من 5` to `2 من 5`.
 2. Edge: archive an open item: `open` drops by 1 and `cleared` stays.
 
-## T24 — Better link preview
+## T23 — Better link preview
 
 **Do**
 - First diagnose: fetch a LeetCode problem URL with `curl` and see whether the site refuses the request or the page has no `og:` tags.

@@ -44,11 +44,11 @@ async function createText(cookies: string, content: string): Promise<string> {
   return created.body.id as string;
 }
 
-async function readCleared(cookies: string): Promise<number> {
+async function readProgress(cookies: string): Promise<{ cleared: number; open: number }> {
   const response = await request(app).get("/progress/today").set("Cookie", cookies);
   expect(response.status).toBe(200);
-  expect(response.body).toEqual({ cleared: expect.any(Number) });
-  return response.body.cleared as number;
+  expect(response.body).toEqual({ cleared: expect.any(Number), open: expect.any(Number) });
+  return response.body as { cleared: number; open: number };
 }
 
 beforeAll(async () => {
@@ -71,26 +71,26 @@ afterAll(async () => {
 
 describe("GET /progress/today", () => {
   it("counts today's done event and drops it when the item leaves done", async () => {
-    const before = await readCleared(cookiesA);
+    const before = await readProgress(cookiesA);
     const itemId = await createText(cookiesA, "خلصت النهاردة");
 
     const done = await request(app).patch(`/items/${itemId}`).set("Cookie", cookiesA).send({ status: "done" });
     expect(done.status).toBe(200);
-    expect(await readCleared(cookiesA)).toBe(before + 1);
+    expect(await readProgress(cookiesA)).toEqual({ cleared: before.cleared + 1, open: before.open });
 
     const back = await request(app).patch(`/items/${itemId}`).set("Cookie", cookiesA).send({ status: "inbox" });
     expect(back.status).toBe(200);
-    expect(await readCleared(cookiesA)).toBe(before);
+    expect(await readProgress(cookiesA)).toEqual({ cleared: before.cleared, open: before.open + 1 });
   });
 
   it("does not count a deleted item, even one that was done today", async () => {
-    const before = await readCleared(cookiesA);
+    const before = await readProgress(cookiesA);
     const openId = await createText(cookiesA, "هتتحذف النهاردة");
     const doneId = await createText(cookiesA, "خلصت وبعدين اتحذفت");
 
     const done = await request(app).patch(`/items/${doneId}`).set("Cookie", cookiesA).send({ status: "done" });
     expect(done.status).toBe(200);
-    expect(await readCleared(cookiesA)).toBe(before + 1);
+    expect(await readProgress(cookiesA)).toEqual({ cleared: before.cleared + 1, open: before.open + 1 });
 
     const deletedOpen = await request(app).delete(`/items/${openId}`).set("Cookie", cookiesA);
     expect(deletedOpen.status).toBe(204);
@@ -102,11 +102,11 @@ describe("GET /progress/today", () => {
       select: { id: true },
     });
     expect(stored).toEqual([]);
-    expect(await readCleared(cookiesA)).toBe(before);
+    expect(await readProgress(cookiesA)).toEqual(before);
   });
 
   it("does not count an archived item", async () => {
-    const before = await readCleared(cookiesA);
+    const before = await readProgress(cookiesA);
     const itemId = await createText(cookiesA, "للأرشيف");
 
     const archived = await request(app)
@@ -119,7 +119,7 @@ describe("GET /progress/today", () => {
       where: { item_id: itemId },
     });
     expect(events).toEqual([]);
-    expect(await readCleared(cookiesA)).toBe(before);
+    expect(await readProgress(cookiesA)).toEqual(before);
   });
 
   it("uses the user-day window, not the previous day and not the exclusive end", async () => {
@@ -179,16 +179,16 @@ describe("GET /progress/today", () => {
   });
 
   it("keeps user B at 0 when user A clears an item", async () => {
-    const beforeB = await readCleared(cookiesB);
-    expect(beforeB).toBe(0);
+    const beforeB = await readProgress(cookiesB);
+    expect(beforeB).toEqual({ cleared: 0, open: 0 });
 
-    const beforeA = await readCleared(cookiesA);
+    const beforeA = await readProgress(cookiesA);
     const itemId = await createText(cookiesA, "ملاحظة أ");
     const done = await request(app).patch(`/items/${itemId}`).set("Cookie", cookiesA).send({ status: "done" });
     expect(done.status).toBe(200);
 
-    expect(await readCleared(cookiesA)).toBe(beforeA + 1);
-    expect(await readCleared(cookiesB)).toBe(0);
+    expect(await readProgress(cookiesA)).toEqual({ cleared: beforeA.cleared + 1, open: beforeA.open });
+    expect(await readProgress(cookiesB)).toEqual({ cleared: 0, open: 0 });
   });
 
   it("rejects a caller with no session", async () => {

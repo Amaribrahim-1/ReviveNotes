@@ -25,6 +25,13 @@ export async function getTodayProgress(_req: Request, res: Response) {
     },
   });
 
-  const body: TodayProgress = { cleared };
+  const open = await prisma.item.count({
+    where: {
+      user_id: user.id,
+      status: { in: ["inbox", "active"] },
+    },
+  });
+
+  const body: TodayProgress = { cleared, open };
   res.json(body);
 }
