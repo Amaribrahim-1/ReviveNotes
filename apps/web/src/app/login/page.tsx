@@ -19,6 +19,7 @@ import {
   surfacePanelClass,
   titleClass,
 } from "@/lib/ui-classes";
+import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
 import { translateIssue, useT } from "@/lib/use-t";
 
 type LoginFields = {
@@ -33,6 +34,7 @@ export default function LoginPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [holdingShare, setHoldingShare] = useState(false);
+  const showPage = useRedirectIfSignedIn();
 
   useEffect(() => {
     setHoldingShare(hasRememberedShare());
@@ -76,6 +78,16 @@ export default function LoginPage() {
 
     toast.success(t("signed_in"), { id: toastId });
     window.location.assign("/inbox");
+  }
+
+  if (!showPage) {
+    return (
+      <main className={authPageClass}>
+        <p role="status" className={mutedClass}>
+          {t("confirming_session")}
+        </p>
+      </main>
+    );
   }
 
   return (

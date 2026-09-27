@@ -16,11 +16,9 @@ import {
   surfacePanelClass,
 } from "@/lib/ui-classes";
 
-const timeZones = Intl.supportedValuesOf("timeZone");
 const dayStartHours = Array.from({ length: 24 }, (_, hour) => hour);
 const extraTimeDefaults = ["09:00", "12:00", "18:00"];
 type SettingsValues = {
-  timezone: string;
   day_start_time: number;
   reminders_enabled: boolean;
   reminder_times: string[];
@@ -43,7 +41,6 @@ export default function SettingsForm() {
   });
   const form = useForm<SettingsValues>({
     defaultValues: {
-      timezone: me.data?.timezone ?? "",
       day_start_time: me.data?.day_start_time ?? 0,
       reminders_enabled: me.data?.reminders_enabled ?? false,
       reminder_times: me.data?.reminder_times.length ? me.data.reminder_times : ["09:00"],
@@ -86,7 +83,6 @@ export default function SettingsForm() {
     }
     appliedUserId.current = me.data.id;
     form.reset({
-      timezone: me.data.timezone,
       day_start_time: me.data.day_start_time,
       reminders_enabled: me.data.reminders_enabled,
       reminder_times: me.data.reminder_times.length > 0 ? me.data.reminder_times : ["09:00"],
@@ -95,7 +91,11 @@ export default function SettingsForm() {
 
   async function onSubmit(values: SettingsValues) {
     setError(null);
-    const parsed = updateSettingsSchema.safeParse(values);
+    if (!me.data) {
+      return;
+    }
+    // The screen has no zone picker. The API still requires one, so the saved zone goes back unchanged.
+    const parsed = updateSettingsSchema.safeParse({ ...values, timezone: me.data.timezone });
     if (!parsed.success) {
       const message = translateIssue(locale, parsed.error.issues[0]?.message);
       setError(message);
@@ -237,8 +237,6 @@ export default function SettingsForm() {
     return <p className={mutedClass}>{t("loading")}</p>;
   }
 
-  const zones = timeZones.includes(me.data.timezone) ? timeZones : [me.data.timezone, ...timeZones];
-
   return (
     <div className="flex flex-col gap-8">
       <form
@@ -247,18 +245,6 @@ export default function SettingsForm() {
         noValidate
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div>
-          <label className={labelClass} htmlFor="settings-timezone">
-            {t("timezone")}
-          </label>
-          <select id="settings-timezone" className={fieldClass} {...form.register("timezone")}>
-            {zones.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone}
-              </option>
-            ))}
-          </select>
-        </div>
         <div>
           <label className={labelClass} htmlFor="settings-day-start">
             {t("day_start")}

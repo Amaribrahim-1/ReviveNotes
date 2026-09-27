@@ -76,6 +76,37 @@ export async function api(
   return api(path, init, true);
 }
 
+function fetchMe(): Promise<Response> {
+  return fetch(`${apiBase()}/me`, {
+    credentials: "include",
+    headers: {
+      "Accept-Language": readStoredLocale(),
+    },
+  });
+}
+
+// The landing, login, and register pages ask this on load. Unlike api(), it never
+// sends the browser to /login, so /login can call it without reloading itself.
+// The access cookie lives 15 minutes, so a 401 tries the 30-day refresh cookie once.
+export async function hasSession(): Promise<boolean> {
+  try {
+    const first = await fetchMe();
+    if (first.status !== 401) {
+      return first.ok;
+    }
+
+    const refreshed = await refreshSession();
+    if (!refreshed) {
+      return false;
+    }
+
+    const second = await fetchMe();
+    return second.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function apiError(response: Response): Promise<string> {
   const body: unknown = await response.json().catch(() => null);
   if (typeof body === "object" && body !== null && "error" in body && typeof body.error === "string") {

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "ReviveNotes",
     short_name: "ReviveNotes",
-    start_url: "/",
+    start_url: "/inbox",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#171717",

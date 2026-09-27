@@ -3,10 +3,22 @@
 import Link from "next/link";
 import HeaderToggles from "@/components/HeaderToggles";
 import { authPageClass, buttonClass, linkClass, mutedClass, titleClass } from "@/lib/ui-classes";
+import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
 import { useT } from "@/lib/use-t";
 
 export default function HomePage() {
   const { t } = useT();
+  const showPage = useRedirectIfSignedIn();
+
+  if (!showPage) {
+    return (
+      <main className={`${authPageClass} min-h-screen justify-center`}>
+        <p role="status" className={mutedClass}>
+          {t("confirming_session")}
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className={`${authPageClass} min-h-screen justify-center`}>

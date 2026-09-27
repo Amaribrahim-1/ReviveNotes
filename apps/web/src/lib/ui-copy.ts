@@ -207,7 +207,6 @@ export const UI = {
   voice_play_error: { ar: "مش قادرين نشغّل التسجيل", en: "Cannot play the recording" },
   open_note_duration: { ar: "فتح الملاحظة، المدة", en: "Open note, length" },
 
-  timezone: { ar: "المنطقة الزمنية", en: "Time zone" },
   day_start: { ar: "ساعة بداية اليوم", en: "Day start hour" },
   day_start_hint: { ar: "0 يعني منتصف الليل.", en: "0 means midnight." },
   reminders: { ar: "التذكيرات", en: "Reminders" },

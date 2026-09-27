@@ -149,3 +149,17 @@ The signed-in app uses a paper-alive light look (soft sage ground, charcoal ink,
 ## UI language (Arabic + English)
 
 The UI defaults to Arabic (`rtl`). English is available from a toggle next to the theme button. Preference lives in `localStorage` under `rn-locale`, owned by a small Zustand store like theme. A tiny head script sets `lang` and `dir` before paint. `next-intl` and URL-based locales were rejected: the app only needs a client preference, not routed locales. Zod schemas store stable message keys; `packages/shared` holds Arabic and plain English strings for those keys and for API errors. The API reads `Accept-Language` and translates before responding. The web client sends that header from the saved locale. English copy stays short and simple on purpose.
+
+## Stay signed in
+
+`/`, `/login`, and `/register` ask `GET /me` when they load. If a session exists, they replace the URL with `/inbox`. `replace` is used, so Back does not return to a page that would bounce again. While the check runs, the page shows one short loading line instead of its buttons or form, so nothing flashes. The installed app opens `/inbox` first (`start_url`). If nobody is signed in there, the shell still sends them to login.
+
+The access cookie lives 15 minutes, so on a new visit `/me` often answers 401 even though the 30-day refresh cookie is still good. The check then calls `POST /auth/refresh` once and asks `/me` again. It uses its own small function, `hasSession`, not `api()`, because `api()` sends the browser to `/login` when refresh fails. On `/login` that would reload the page forever. If the API cannot be reached, the check counts as signed out and the page shows as before.
+
+A Next.js middleware or server check was rejected. The cookies belong to the API's domain, a different site from the web app, so the web server never sees them. Only the browser can ask the API.
+
+## Cairo time
+
+Register sends `Africa/Cairo` instead of the browser's timezone, and settings no longer show a timezone picker. The day-start hour stays. One migration sets every existing user's `timezone` to `Africa/Cairo`. It changes only that column. Stored UTC timestamps stay as they are, and "today" is still computed at read time, so old notes simply group by Cairo days now. Reminder times are read as Cairo times from then on.
+
+The API did not change. `POST /auth/register` and `PATCH /me` still accept any IANA timezone, so another client could send a different one later. The settings screen sends the user's saved timezone back unchanged when it saves. Removing the column, or hard-coding Cairo inside the API, was rejected: it would lock every future client to one zone.

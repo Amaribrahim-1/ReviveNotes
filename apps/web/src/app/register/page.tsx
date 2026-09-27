@@ -19,7 +19,11 @@ import {
   surfacePanelClass,
   titleClass,
 } from "@/lib/ui-classes";
+import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
 import { translateIssue, useT } from "@/lib/use-t";
+
+// Every account starts on Cairo time. The API still accepts any IANA zone for other clients.
+const REGISTER_TIMEZONE = "Africa/Cairo";
 
 type RegisterFields = {
   email: string;
@@ -33,6 +37,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [holdingShare, setHoldingShare] = useState(false);
+  const showPage = useRedirectIfSignedIn();
 
   useEffect(() => {
     setHoldingShare(hasRememberedShare());
@@ -43,7 +48,7 @@ export default function RegisterPage() {
     const parsed = registerSchema.safeParse({
       email: values.email,
       password: values.password,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: REGISTER_TIMEZONE,
     });
     if (!parsed.success) {
       const message = translateIssue(locale, parsed.error.issues[0]?.message);
@@ -80,6 +85,16 @@ export default function RegisterPage() {
 
     toast.success(t("account_created"), { id: toastId });
     window.location.assign("/inbox");
+  }
+
+  if (!showPage) {
+    return (
+      <main className={authPageClass}>
+        <p role="status" className={mutedClass}>
+          {t("confirming_session")}
+        </p>
+      </main>
+    );
   }
 
   return (
