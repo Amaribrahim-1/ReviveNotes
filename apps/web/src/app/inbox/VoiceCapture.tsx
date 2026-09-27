@@ -7,8 +7,16 @@ import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import { alertClass, buttonClass, fieldClass, labelClass } from "@/lib/ui-classes";
 import { formatVoiceDuration } from "@/components/items/format-voice-duration";
+import { Mic, Square, Loader2 } from "lucide-react";
 import { useRecorder } from "./use-recorder";
 import { translateIssue, useT } from "@/lib/use-t";
+
+const WAVE_BARS = [
+  30, 45, 60, 50, 70, 85, 60, 40,
+  55, 75, 90, 80, 65, 50, 40, 60,
+  70, 85, 75, 50, 40, 55, 70, 60,
+  45, 30, 50, 75, 60, 40, 50, 80
+];
 
 type RecorderMime = "audio/webm" | "audio/ogg";
 
@@ -213,28 +221,58 @@ export default function VoiceCapture() {
           className={fieldClass}
         />
       </div>
-      <p>
-        {t("voice_duration")} <span dir="ltr">{formatVoiceDuration(elapsedSeconds)}</span>
-      </p>
+      <div className="flex w-full items-center gap-3 rounded-xl bg-rn-note-ink/5 p-2" dir="ltr">
+        <button
+          type="button"
+          aria-label={buttonLabel}
+          disabled={uploading}
+          onClick={() => {
+            if (recording) {
+              stopRecording();
+              return;
+            }
+            void startRecording();
+          }}
+          className={`flex size-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm disabled:opacity-50 ${recording ? "bg-red-500 hover:bg-red-600 animate-pulse" : "bg-rn-accent hover:bg-rn-accent/90"}`}
+        >
+          {uploading ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : recording ? (
+            <Square className="size-4 fill-current" />
+          ) : (
+            <Mic className="size-5" />
+          )}
+        </button>
+
+        <div className="relative flex h-10 flex-1 items-center">
+          {/* Waves background */}
+          <div className="absolute inset-0 flex items-center justify-between gap-[2px]">
+            {WAVE_BARS.map((h, i) => (
+              <div key={i} className="w-1 rounded-full bg-rn-note-ink/20" style={{ height: `${h}%` }} />
+            ))}
+          </div>
+          
+          {/* Active waves */}
+          <div 
+            className="absolute inset-0 flex items-center justify-between gap-[2px]"
+            style={{ clipPath: `inset(0 ${100 - (elapsedSeconds / VOICE_MAX_SECONDS) * 100}% 0 0)` }}
+          >
+            {WAVE_BARS.map((h, i) => (
+              <div key={i} className={`w-1 rounded-full ${recording ? "bg-red-500" : "bg-rn-accent"}`} style={{ height: `${h}%` }} />
+            ))}
+          </div>
+        </div>
+
+        <div className="shrink-0 text-right text-xs font-medium text-rn-note-ink/70 tabular-nums">
+          {formatVoiceDuration(elapsedSeconds)} / {formatVoiceDuration(VOICE_MAX_SECONDS)}
+        </div>
+      </div>
+
       {error ? (
         <p className={alertClass} role="alert">
           {error}
         </p>
       ) : null}
-      <button
-        type="button"
-        disabled={uploading}
-        onClick={() => {
-          if (recording) {
-            stopRecording();
-            return;
-          }
-          void startRecording();
-        }}
-        className={buttonClass}
-      >
-        {buttonLabel}
-      </button>
     </div>
   );
 }
