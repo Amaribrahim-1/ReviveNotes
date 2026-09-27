@@ -43,7 +43,7 @@ export default function ItemCardDelete({ item }: { item: Item }) {
       <button
         type="button"
         aria-label={t("delete_forever")}
-        className="p-1.5 text-rn-note-ink/40 hover:text-rn-note-ink transition-colors rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent"
+        className="p-1.5 cursor-pointer text-rn-note-ink/40 hover:text-rn-note-ink transition-colors rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();

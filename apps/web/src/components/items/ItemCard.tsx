@@ -49,7 +49,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
           </div>
           <div className="min-h-8 md:shrink-0">{cardNote(item.note)}</div>
         </Link>
-        <div className="absolute top-2 end-2 z-10">
+        <div className="absolute bottom-2 left-2 z-10">
           <ItemCardDelete item={item} />
         </div>
       </article>
@@ -78,7 +78,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
         <div className="relative z-10">
           <VoicePlayButton itemId={item.id} />
         </div>
-        <div className="absolute top-2 end-2 z-10">
+        <div className="absolute bottom-2 left-2 z-10">
           <ItemCardDelete item={item} />
         </div>
       </article>
@@ -98,7 +98,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
             {item.content}
           </p>
         </Link>
-        <div className="absolute top-2 end-2 z-10">
+        <div className="absolute bottom-2 left-2 z-10">
           <ItemCardDelete item={item} />
         </div>
       </article>
@@ -126,7 +126,7 @@ export default function ItemCard({ item, index }: ItemCardProps) {
         )}
         {cardNote(item.note)}
       </Link>
-      <div className="absolute top-2 end-2 z-10">
+      <div className="absolute bottom-2 left-2 z-10">
         <ItemCardDelete item={item} />
       </div>
     </article>
