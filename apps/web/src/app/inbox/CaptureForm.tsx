@@ -3,8 +3,7 @@
 import { createItemSchema, LINK_MAX_LENGTH, TEXT_MAX_LENGTH } from "@revivenotes/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import type { ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import type { FormEvent, ReactNode } from "react";
 import { toast } from "sonner";
 import { api, apiError } from "@/lib/api";
 import {
@@ -31,43 +30,46 @@ const captureTypes = [
 
 type CaptureType = (typeof captureTypes)[number]["id"];
 
-type CaptureFields = {
-  content: string;
-  note: string;
-};
-
 export default function CaptureForm() {
   const { t, locale } = useT();
   const queryClient = useQueryClient();
-  const form = useForm<CaptureFields>({
-    defaultValues: { content: "", note: "" },
-  });
   const [selectedType, setSelectedType] = useState<CaptureType>("text");
   const [categoryId, setCategoryId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [fieldsKey, setFieldsKey] = useState(0);
 
   function chooseType(next: CaptureType) {
     setSelectedType(next);
     setError(null);
-    form.reset();
+    setFieldsKey((current) => current + 1);
   }
 
-  async function onSubmit(values: CaptureFields) {
+  function clearFields() {
+    setCategoryId("");
+    setFieldsKey((current) => current + 1);
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (selectedType === "voice" || selectedType === "image") {
       return;
     }
     setError(null);
+    const data = new FormData(event.currentTarget);
+    const content = String(data.get("content") ?? "");
+    const note = String(data.get("note") ?? "");
     const parsed = createItemSchema.safeParse(
       selectedType === "link"
         ? {
             type: "link",
-            content: values.content,
-            ...(values.note.trim() === "" ? {} : { note: values.note }),
+            content,
+            ...(note.trim() === "" ? {} : { note }),
             ...(categoryId === "" ? {} : { category_id: categoryId }),
           }
         : {
             type: selectedType,
-            content: values.content,
+            content,
             ...(categoryId === "" ? {} : { category_id: categoryId }),
           },
     );
@@ -78,6 +80,7 @@ export default function CaptureForm() {
       return;
     }
 
+    setSaving(true);
     const toastId = toast.loading(t("saving"));
     try {
       const response = await api("/items", {
@@ -94,10 +97,11 @@ export default function CaptureForm() {
       setError(t("offline"));
       toast.error(t("offline"), { id: toastId });
       return;
+    } finally {
+      setSaving(false);
     }
 
-    form.reset();
-    setCategoryId("");
+    clearFields();
     await queryClient.invalidateQueries({ queryKey: ["items"] });
     toast.success(t("saved"), { id: toastId });
   }
@@ -112,11 +116,11 @@ export default function CaptureForm() {
           </label>
           <textarea
             id="capture-text"
+            name="content"
             rows={4}
             maxLength={TEXT_MAX_LENGTH}
             dir="auto"
             className={fieldClass}
-            {...form.register("content")}
           />
         </div>
       );
@@ -130,13 +134,13 @@ export default function CaptureForm() {
             </label>
             <input
               id="capture-link"
+              name="content"
               type="text"
               inputMode="url"
               maxLength={LINK_MAX_LENGTH}
               autoComplete="off"
               dir="ltr"
               className={fieldClass}
-              {...form.register("content")}
             />
           </div>
           <div>
@@ -145,11 +149,11 @@ export default function CaptureForm() {
             </label>
             <textarea
               id="capture-link-note"
+              name="note"
               rows={3}
               maxLength={TEXT_MAX_LENGTH}
               dir="auto"
               className={fieldClass}
-              {...form.register("note")}
             />
           </div>
         </>
@@ -162,11 +166,7 @@ export default function CaptureForm() {
   }
 
   return (
-    <form
-      className={`${surfacePanelClass} flex flex-col gap-4`}
-      noValidate
-      onSubmit={form.handleSubmit(onSubmit)}
-    >
+    <form className={`${surfacePanelClass} flex flex-col gap-4`} noValidate onSubmit={onSubmit}>
       <div role="radiogroup" aria-label={t("type_label")} className="grid grid-cols-4 gap-1 sm:gap-2">
         {captureTypes.map((captureType) => {
           const selected = selectedType === captureType.id;
@@ -186,29 +186,19 @@ export default function CaptureForm() {
       </div>
       <CaptureCategoryField value={categoryId} onChange={setCategoryId} />
       {selectedType === "voice" ? (
-        <VoiceCapture
-          categoryId={categoryId}
-          onSaved={() => {
-            setCategoryId("");
-          }}
-        />
+        <VoiceCapture categoryId={categoryId} onSaved={clearFields} />
       ) : selectedType === "image" ? (
-        <ImageCapture
-          categoryId={categoryId}
-          onSaved={() => {
-            setCategoryId("");
-          }}
-        />
+        <ImageCapture categoryId={categoryId} onSaved={clearFields} />
       ) : (
         <>
-          <div key={selectedType}>{field}</div>
+          <div key={fieldsKey}>{field}</div>
           {error ? (
             <p className={alertClass} role="alert">
               {error}
             </p>
           ) : null}
-          <button type="submit" disabled={form.formState.isSubmitting} className={buttonClass}>
-            {form.formState.isSubmitting ? t("saving") : t("save")}
+          <button type="submit" disabled={saving} className={buttonClass}>
+            {saving ? t("saving") : t("save")}
           </button>
         </>
       )}
