@@ -35,15 +35,22 @@ export const itemNoteSchema = z
   .max(TEXT_MAX_LENGTH, { error: "note_too_long" })
   .transform((value) => (value.length === 0 ? null : value));
 
+export const itemCategoryIdSchema = z
+  .string({ error: "category_missing" })
+  .trim()
+  .min(1, { error: "category_missing" });
+
 const textItemSchema = z.object({
   type: z.literal("text"),
   content: textContentSchema,
+  category_id: itemCategoryIdSchema.optional(),
 });
 
 const linkItemSchema = z.object({
   type: z.literal("link"),
   content: linkContentSchema,
   note: itemNoteSchema.optional(),
+  category_id: itemCategoryIdSchema.optional(),
 });
 
 export const createItemSchema = z.discriminatedUnion("type", [textItemSchema, linkItemSchema], {
@@ -77,11 +84,7 @@ export const itemListQuerySchema = z
   .object({
     status: z.enum(ITEM_STATUSES, { error: "status_unknown" }).optional(),
     type: z.enum(ITEM_TYPES, { error: "type_unknown" }).optional(),
-    category_id: z
-      .string({ error: "category_missing" })
-      .trim()
-      .min(1, { error: "category_missing" })
-      .optional(),
+    category_id: itemCategoryIdSchema.optional(),
     tag: tagQuerySchema.optional(),
     cursor: z.string({ error: "cursor_invalid" }).trim().optional(),
   })
@@ -105,12 +108,7 @@ export const updateItemSchema = z.object({
     .max(TEXT_MAX_LENGTH, { error: "content_too_long" })
     .optional(),
   status: z.enum(ITEM_STATUSES, { error: "status_unknown" }).optional(),
-  category_id: z
-    .string({ error: "category_missing" })
-    .trim()
-    .min(1, { error: "category_missing" })
-    .nullable()
-    .optional(),
+  category_id: itemCategoryIdSchema.nullable().optional(),
   tag_ids: z
     .array(z.string({ error: "tag_missing" }).trim().min(1, { error: "tag_missing" }), {
       error: "tags_invalid",

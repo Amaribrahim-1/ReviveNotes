@@ -84,13 +84,19 @@ const imageKinds = [
   ["image/gif", "gif"],
 ] as const;
 
-function postImage(cookies: string, bytes: Buffer, contentType: string) {
+function postImage(
+  cookies: string,
+  bytes: Buffer,
+  contentType: string,
+  extra: Record<string, string> = {},
+) {
   const kind = imageKinds.find((entry) => entry[0] === contentType);
   const extension = kind?.[1] ?? "bin";
-  return request(app)
-    .post("/items/image")
-    .set("Cookie", cookies)
-    .attach("image", bytes, { filename: `photo.${extension}`, contentType });
+  let pending = request(app).post("/items/image").set("Cookie", cookies);
+  for (const [name, value] of Object.entries(extra)) {
+    pending = pending.field(name, value);
+  }
+  return pending.attach("image", bytes, { filename: `photo.${extension}`, contentType });
 }
 
 beforeAll(async () => {
@@ -203,6 +209,34 @@ describe("image items", () => {
     expect(after).toBe(before);
     expect(store.files.size).toBe(objectsBefore);
   });
+
+  it("saves an optional category on create and rejects another user's category", async () => {
+    const own = await request(app).post("/categories").set("Cookie", cookiesA).send({
+      name: `image-${randomUUID()}`,
+      color: "green",
+    });
+    expect(own.status).toBe(201);
+    const ownId = own.body.id as string;
+
+    const foreign = await request(app).post("/categories").set("Cookie", cookiesB).send({
+      name: `image-${randomUUID()}`,
+      color: "orange",
+    });
+    expect(foreign.status).toBe(201);
+
+    const withCategory = await postImage(cookiesA, Buffer.from("with-cat"), "image/png", {
+      category_id: ownId,
+    });
+    expect(withCategory.status).toBe(201);
+    expect((withCategory.body as ImageBody).category_id).toBe(ownId);
+    expect((withCategory.body as ImageBody).status).toBe("inbox");
+
+    const stolen = await postImage(cookiesA, Buffer.from("stolen-cat"), "image/png", {
+      category_id: foreign.body.id as string,
+    });
+    expect(stolen.status).toBe(400);
+    expect(stolen.body).toEqual({ error: "التصنيف مش موجود" });
+  }, 15_000);
 
   it("returns 404 to user B and no bytes", async () => {
     const created = await postImage(cookiesA, Buffer.from("private-photo"), "image/jpeg");

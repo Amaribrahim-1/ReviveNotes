@@ -214,6 +214,39 @@ describe("text and link items", () => {
     expect(activePage.items.map((item) => item.id)).not.toContain(id);
   });
 
+  it("saves an optional category on create and rejects another user's category", async () => {
+    const own = await request(app).post("/categories").set("Cookie", cookiesA).send({
+      name: `capture-${randomUUID()}`,
+      color: "blue",
+    });
+    expect(own.status).toBe(201);
+    const ownId = own.body.id as string;
+
+    const foreign = await request(app).post("/categories").set("Cookie", cookiesB).send({
+      name: `capture-${randomUUID()}`,
+      color: "red",
+    });
+    expect(foreign.status).toBe(201);
+
+    const withCategory = await request(app).post("/items").set("Cookie", cookiesA).send({
+      type: "text",
+      content: "مع تصنيف",
+      category_id: ownId,
+    });
+    expect(withCategory.status).toBe(201);
+    const saved = withCategory.body as ItemBody;
+    expect(saved.status).toBe("inbox");
+    expect(saved.category_id).toBe(ownId);
+
+    const stolen = await request(app).post("/items").set("Cookie", cookiesA).send({
+      type: "text",
+      content: "تصنيف حد تاني",
+      category_id: foreign.body.id,
+    });
+    expect(stolen.status).toBe(400);
+    expect(stolen.body).toEqual({ error: "التصنيف مش موجود" });
+  }, 15_000);
+
   it("returns 30 items and then the 31st", async () => {
     const registered = await postRegister(nextEmail("page"));
     expect(registered.status).toBe(201);

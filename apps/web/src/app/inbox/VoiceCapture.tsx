@@ -33,7 +33,12 @@ function recorderMime(): RecorderMime | null {
   return null;
 }
 
-export default function VoiceCapture() {
+type VoiceCaptureProps = {
+  categoryId: string;
+  onSaved: () => void;
+};
+
+export default function VoiceCapture({ categoryId, onSaved }: VoiceCaptureProps) {
   const { t, locale } = useT();
   const queryClient = useQueryClient();
   const recording = useRecorder((state) => state.recording);
@@ -48,6 +53,8 @@ export default function VoiceCapture() {
   const stoppingRef = useRef(false);
   const cancelRef = useRef(false);
   const noteInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const categoryIdRef = useRef(categoryId);
+  categoryIdRef.current = categoryId;
 
   useEffect(() => {
     // Dev mode runs this cleanup once on startup. The next run must be allowed to record.
@@ -91,6 +98,9 @@ export default function VoiceCapture() {
     if (note.trim() !== "") {
       form.append("note", note);
     }
+    if (categoryIdRef.current !== "") {
+      form.append("category_id", categoryIdRef.current);
+    }
     setUploading(true);
     const toastId = toast.loading(t("saving"));
     try {
@@ -118,6 +128,7 @@ export default function VoiceCapture() {
     if (noteInputRef.current) {
       noteInputRef.current.value = "";
     }
+    onSaved();
     await queryClient.invalidateQueries({ queryKey: ["items"] });
     toast.success(t("saved"), { id: toastId });
   }

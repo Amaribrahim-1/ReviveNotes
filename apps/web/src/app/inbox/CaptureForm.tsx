@@ -12,11 +12,11 @@ import {
   buttonClass,
   fieldClass,
   labelClass,
-  segmentBaseClass,
   segmentIdleClass,
   segmentSelectedClass,
   surfacePanelClass,
 } from "@/lib/ui-classes";
+import CaptureCategoryField from "./CaptureCategoryField";
 import ImageCapture from "./ImageCapture";
 import VoiceCapture from "./VoiceCapture";
 import type { UiKey } from "@/lib/ui-copy";
@@ -43,6 +43,7 @@ export default function CaptureForm() {
     defaultValues: { content: "", note: "" },
   });
   const [selectedType, setSelectedType] = useState<CaptureType>("text");
+  const [categoryId, setCategoryId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   function chooseType(next: CaptureType) {
@@ -62,8 +63,13 @@ export default function CaptureForm() {
             type: "link",
             content: values.content,
             ...(values.note.trim() === "" ? {} : { note: values.note }),
+            ...(categoryId === "" ? {} : { category_id: categoryId }),
           }
-        : { type: selectedType, content: values.content },
+        : {
+            type: selectedType,
+            content: values.content,
+            ...(categoryId === "" ? {} : { category_id: categoryId }),
+          },
     );
     if (!parsed.success) {
       const message = translateIssue(locale, parsed.error.issues[0]?.message);
@@ -91,6 +97,7 @@ export default function CaptureForm() {
     }
 
     form.reset();
+    setCategoryId("");
     await queryClient.invalidateQueries({ queryKey: ["items"] });
     toast.success(t("saved"), { id: toastId });
   }
@@ -160,7 +167,7 @@ export default function CaptureForm() {
       noValidate
       onSubmit={form.handleSubmit(onSubmit)}
     >
-      <div role="radiogroup" aria-label={t("type_label")} className="flex flex-wrap gap-2">
+      <div role="radiogroup" aria-label={t("type_label")} className="grid grid-cols-4 gap-1 sm:gap-2">
         {captureTypes.map((captureType) => {
           const selected = selectedType === captureType.id;
           return (
@@ -170,17 +177,28 @@ export default function CaptureForm() {
               role="radio"
               aria-checked={selected}
               onClick={() => chooseType(captureType.id)}
-              className={`${segmentBaseClass} ${selected ? segmentSelectedClass : segmentIdleClass}`}
+              className={`min-w-0 w-full rounded-xl px-1 py-2 text-center text-sm whitespace-nowrap transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rn-accent sm:px-4 sm:text-base ${selected ? segmentSelectedClass : segmentIdleClass}`}
             >
               {t(captureType.label)}
             </button>
           );
         })}
       </div>
+      <CaptureCategoryField value={categoryId} onChange={setCategoryId} />
       {selectedType === "voice" ? (
-        <VoiceCapture />
+        <VoiceCapture
+          categoryId={categoryId}
+          onSaved={() => {
+            setCategoryId("");
+          }}
+        />
       ) : selectedType === "image" ? (
-        <ImageCapture />
+        <ImageCapture
+          categoryId={categoryId}
+          onSaved={() => {
+            setCategoryId("");
+          }}
+        />
       ) : (
         <>
           <div key={selectedType}>{field}</div>

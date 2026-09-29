@@ -3,6 +3,7 @@ import {
   createItemSchema,
   IMAGE_MAX_BYTES,
   imageContentTypeSchema,
+  itemCategoryIdSchema,
   itemListQuerySchema,
   itemNoteSchema,
   linkContentSchema,
@@ -71,6 +72,28 @@ function readOptionalNote(
     return { ok: false, error: issueMessage(req, parsed.error.issues) };
   }
   return { ok: true, note: parsed.data };
+}
+
+async function resolveOwnedCategoryId(
+  req: Request,
+  userId: string,
+  value: unknown,
+): Promise<{ ok: true; category_id: string | null } | { ok: false; error: string }> {
+  if (value === undefined || value === "") {
+    return { ok: true, category_id: null };
+  }
+  const parsed = itemCategoryIdSchema.safeParse(value);
+  if (!parsed.success) {
+    return { ok: false, error: issueMessage(req, parsed.error.issues) };
+  }
+  const category = await prisma.category.findFirst({
+    where: { id: parsed.data, user_id: userId },
+    select: { id: true },
+  });
+  if (!category) {
+    return { ok: false, error: msg(req, BAD_CATEGORY) };
+  }
+  return { ok: true, category_id: category.id };
 }
 
 function paramId(req: Request): string | null {
@@ -183,6 +206,11 @@ export async function createItem(req: Request, res: Response) {
   }
 
   const user = readSignedInUser(res);
+  const category = await resolveOwnedCategoryId(req, user.id, parsed.data.category_id);
+  if (!category.ok) {
+    res.status(400).json({ error: category.error });
+    return;
+  }
   // A refused or failed preview still saves the link. content stays the URL.
   const linkPreview = parsed.data.type === "link" ? await fetchLinkPreview(parsed.data.content) : null;
   const note = parsed.data.type === "link" ? (parsed.data.note ?? null) : null;
@@ -195,6 +223,7 @@ export async function createItem(req: Request, res: Response) {
       content: parsed.data.content,
       note,
       status: "inbox",
+      category_id: category.category_id,
       link_preview: linkPreview === null ? Prisma.DbNull : linkPreview,
       created_at: now,
       last_touched_at: now,
@@ -695,6 +724,11 @@ async function createVoiceItem(req: Request, res: Response) {
   }
 
   const user = readSignedInUser(res);
+  const category = await resolveOwnedCategoryId(req, user.id, req.body.category_id);
+  if (!category.ok) {
+    res.status(400).json({ error: category.error });
+    return;
+  }
   // The id is chosen here so the object key can be stored in the same insert.
   const id = randomUUID();
   const key = `${user.id}/${id}.${kind.extension}`;
@@ -707,7 +741,7 @@ async function createVoiceItem(req: Request, res: Response) {
       content: key,
       note: noteInput.note,
       status: "inbox",
-      category_id: null,
+      category_id: category.category_id,
       duration_seconds: duration.data,
       created_at: now,
       last_touched_at: now,
@@ -827,6 +861,11 @@ async function createImageItem(req: Request, res: Response) {
   }
 
   const user = readSignedInUser(res);
+  const category = await resolveOwnedCategoryId(req, user.id, req.body.category_id);
+  if (!category.ok) {
+    res.status(400).json({ error: category.error });
+    return;
+  }
   const id = randomUUID();
   const key = `${user.id}/${id}.${kind.extension}`;
   const now = new Date();
@@ -839,7 +878,7 @@ async function createImageItem(req: Request, res: Response) {
         content: key,
         note: noteInput.note,
         status: "inbox",
-        category_id: null,
+        category_id: category.category_id,
         created_at: now,
         last_touched_at: now,
       },

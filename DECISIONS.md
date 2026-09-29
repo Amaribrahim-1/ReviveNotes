@@ -50,6 +50,8 @@ A category or tag name is trimmed. `name_key` is that trimmed name in lowercase.
 
 Text content is 1 to 10,000 characters, and a link URL is at most 2,000 characters.
 
+Create may send an optional `category_id`. Missing that field still stores `null`, so capture never requires a category. A category that is not the caller's is rejected. Setting a category on create does not change `status` from `inbox`. Putting the picker only on the detail page was rejected because the user asked to choose it while capturing, and still to skip it.
+
 ## Day boundary
 
 `day_start_time = 14` and `Africa/Cairo` means the user's day runs from 14:00 until 14:00 the next calendar date, in Cairo. An instant at 13:00 local belongs to the previous calendar date. An instant at 14:00 local belongs to that calendar date.

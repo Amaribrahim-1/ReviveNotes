@@ -8,7 +8,12 @@ import { api, apiError } from "@/lib/api";
 import { alertClass, buttonClass, fieldClass, labelClass, mutedClass } from "@/lib/ui-classes";
 import { translateIssue, useT } from "@/lib/use-t";
 
-export default function ImageCapture() {
+type ImageCaptureProps = {
+  categoryId: string;
+  onSaved: () => void;
+};
+
+export default function ImageCapture({ categoryId, onSaved }: ImageCaptureProps) {
   const { t, locale } = useT();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -53,6 +58,9 @@ export default function ImageCapture() {
     if (note.trim() !== "") {
       form.append("note", note);
     }
+    if (categoryId !== "") {
+      form.append("category_id", categoryId);
+    }
     setUploading(true);
     const toastId = toast.loading(t("saving"));
     try {
@@ -79,6 +87,7 @@ export default function ImageCapture() {
     if (inputRef.current) {
       inputRef.current.value = "";
     }
+    onSaved();
     await queryClient.invalidateQueries({ queryKey: ["items"] });
     toast.success(t("saved"), { id: toastId });
   }

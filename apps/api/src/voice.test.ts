@@ -77,13 +77,22 @@ type VoiceBody = {
   last_touched_at: string;
 };
 
-function postVoice(cookies: string, clip: Buffer, duration: string, contentType = "audio/webm") {
+function postVoice(
+  cookies: string,
+  clip: Buffer,
+  duration: string,
+  contentType = "audio/webm",
+  extra: Record<string, string> = {},
+) {
   const filename = contentType.startsWith("audio/ogg") ? "clip.ogg" : "clip.webm";
-  return request(app)
+  let pending = request(app)
     .post("/items/voice")
     .set("Cookie", cookies)
-    .field("duration_seconds", duration)
-    .attach("audio", clip, { filename, contentType });
+    .field("duration_seconds", duration);
+  for (const [name, value] of Object.entries(extra)) {
+    pending = pending.field(name, value);
+  }
+  return pending.attach("audio", clip, { filename, contentType });
 }
 
 beforeAll(async () => {
@@ -214,6 +223,34 @@ describe("voice items", () => {
     const after = await prisma.item.count({ where: { user_id: userAId } });
     expect(after).toBe(before);
   });
+
+  it("saves an optional category on create and rejects another user's category", async () => {
+    const own = await request(app).post("/categories").set("Cookie", cookiesA).send({
+      name: `voice-${randomUUID()}`,
+      color: "teal",
+    });
+    expect(own.status).toBe(201);
+    const ownId = own.body.id as string;
+
+    const foreign = await request(app).post("/categories").set("Cookie", cookiesB).send({
+      name: `voice-${randomUUID()}`,
+      color: "pink",
+    });
+    expect(foreign.status).toBe(201);
+
+    const withCategory = await postVoice(cookiesA, Buffer.from("with-cat"), "5", "audio/webm", {
+      category_id: ownId,
+    });
+    expect(withCategory.status).toBe(201);
+    expect((withCategory.body as VoiceBody).category_id).toBe(ownId);
+    expect((withCategory.body as VoiceBody).status).toBe("inbox");
+
+    const stolen = await postVoice(cookiesA, Buffer.from("stolen-cat"), "5", "audio/webm", {
+      category_id: foreign.body.id as string,
+    });
+    expect(stolen.status).toBe(400);
+    expect(stolen.body).toEqual({ error: "التصنيف مش موجود" });
+  }, 15_000);
 
   it("returns 404 to user B and no bytes", async () => {
     const created = await postVoice(cookiesA, Buffer.from("private-clip"), "8");

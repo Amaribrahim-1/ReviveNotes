@@ -112,6 +112,7 @@ export const UI = {
   no_category: { ar: "من غير تصنيف", en: "No category" },
 
   category: { ar: "التصنيف", en: "Category" },
+  category_optional: { ar: "التصنيف (اختياري)", en: "Category (optional)" },
   name: { ar: "الاسم", en: "Name" },
   color: { ar: "اللون", en: "Color" },
   note: { ar: "الملاحظة", en: "Note" },
